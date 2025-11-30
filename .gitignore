@@ -1,0 +1,174 @@
+# ============================================================================
+# API BDD Test Case Generator MCP Server - .gitignore
+# ============================================================================
+
+# ============================================================================
+# Node.js / TypeScript
+# ============================================================================
+
+# Dependencies
+node_modules/
+jspm_packages/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+test-output/
+__tests__/__snapshots__/
+.jest-cache/
+
+# Caches
+.npm/
+.eslintcache
+.stylelintcache
+.cache/
+.parcel-cache/
+*.tsbuildinfo
+
+# Optional packages
+*.tgz
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Yarn
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Package manager lock files (keep package-lock.json for reproducibility)
+# Uncomment if using yarn or pnpm exclusively
+# yarn.lock
+# pnpm-lock.yaml
+
+# ============================================================================
+# MCP Server Specific
+# ============================================================================
+
+# Generated test scenarios and feature files (examples/samples should be in docs)
+*.feature
+features/
+test-scenarios/
+generated-tests/
+
+# Example OpenAPI specs used for testing (keep sample specs in docs)
+specs/
+sample-specs/
+*.openapi.yaml
+*.openapi.json
+
+# MCP server credentials and configuration
+gcp-oauth.keys.json
+.*-server-credentials.json
+.mcp-config.json
+
+# Output directories for generated content
+output/
+exports/
+
+# ============================================================================
+# Docker
+# ============================================================================
+
+# Docker volumes and build artifacts
+docker-data/
+.docker/
+
+# ============================================================================
+# IDEs and Editors
+# ============================================================================
+
+# VSCode
+.vscode/
+.vscode-test/
+*.code-workspace
+
+# JetBrains (WebStorm, IntelliJ IDEA, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ============================================================================
+# Operating System
+# ============================================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+.directory
+
+# ============================================================================
+# Temporary and Local Files
+# ============================================================================
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Local development files
+.local/
+local-*.sh
+*.local.*
+
+# Claude AI settings
+.claude/settings.local.json
+
+# Claude AI settings
+.claude/settings.local.json

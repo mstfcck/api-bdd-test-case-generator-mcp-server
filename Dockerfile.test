@@ -1,0 +1,31 @@
+FROM node:22-alpine AS tester
+
+WORKDIR /app
+
+# Copy everything including tests
+COPY . .
+
+# Install all dependencies (including devDependencies)
+RUN npm install
+
+# Build
+RUN npm run build
+
+# Run tests
+RUN npm test --silent || exit 1
+
+# Final lightweight image (same as original Dockerfile production stage)
+FROM node:22-alpine
+RUN apk add --no-cache dumb-init
+RUN addgroup -g 1001 -S mcp && adduser -u 1001 -S mcp -G mcp
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --omit=dev --ignore-scripts && npm cache clean --force
+COPY --from=tester /app/dist ./dist
+RUN mkdir -p /app/specs /app/output && chown -R mcp:mcp /app
+USER mcp
+ENV NODE_OPTIONS="--max-old-space-size=512"
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD node -e "console.log('healthy')" || exit 1
+VOLUME ["/app/specs", "/app/output"]
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["node", "dist/index.js"]

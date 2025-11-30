@@ -1,0 +1,73 @@
+# Docker Compose Configuration for API Spec Test Case Generator MCP Server
+# Provides easy deployment with optional volume management
+
+version: "3.8"
+
+services:
+  # ============================================================================
+  # MCP Server Service
+  # ============================================================================
+  mcp-api-bdd-test-case-generator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: mcp/api-bdd-test-case-generator:latest
+
+    container_name: mcp-api-bdd-test-case-generator
+
+    restart: unless-stopped
+
+    # Resource limits (adjust based on your needs)
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+
+    # Dual volume mounts for secure file access
+    # Read-only: Workspace access for reading specs
+    # Read-write: Output directory for generated test files
+    volumes:
+      - ./:/workspace:ro
+      - ./output:/workspace/output:rw
+
+    # Environment variables
+    environment:
+      - TZ=UTC
+
+    # Stdin/Stdout configuration for MCP
+    stdin_open: true
+    tty: true
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+    # Labels for organization
+    labels:
+      - "com.modelcontextprotocol.service=api-bdd-test-case-generator"
+      - "com.modelcontextprotocol.version=0.1.0"
+
+# ============================================================================
+# Volumes (optional persistent storage)
+# ============================================================================
+volumes:
+  specs:
+    driver: local
+  output:
+    driver: local
+
+# ============================================================================
+# Networks (optional custom network)
+# ============================================================================
+networks:
+  default:
+    name: mcp-network
+    driver: bridge
