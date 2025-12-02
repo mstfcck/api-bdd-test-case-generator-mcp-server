@@ -291,13 +291,107 @@ describe('EndpointAnalyzer', () => {
     });
 
     describe('findRelatedEndpoints', () => {
-        it('should return empty array', () => {
+        it('should return empty array when no relationships exist', () => {
             const operation: OpenAPIV3.OperationObject = testSpecDocument.paths['/pets']!.post!;
             const endpoint = Endpoint.create('/pets', 'POST', operation);
 
             const result = analyzer.findRelatedEndpoints(testSpec, endpoint);
 
             expect(result).toEqual([]);
+        });
+
+        it('should include response link relationships via operationId', () => {
+            testSpecDocument.paths['/pets/{petId}'] = {
+                get: {
+                    operationId: 'getPetById',
+                    responses: {
+                        '200': { description: 'OK' }
+                    }
+                }
+            };
+
+            (testSpecDocument.paths['/pets']!.post!.responses!['201'] as OpenAPIV3.ResponseObject).links = {
+                getPet: {
+                    operationId: 'getPetById',
+                    description: 'Follow-up read'
+                }
+            };
+
+            testSpec = OpenAPISpecification.create(testSpecDocument, 'test-source');
+
+            const operation: OpenAPIV3.OperationObject = testSpecDocument.paths['/pets']!.post!;
+            const endpoint = Endpoint.create('/pets', 'POST', operation);
+
+            const result = analyzer.findRelatedEndpoints(testSpec, endpoint);
+
+            expect(result).toContainEqual({
+                relationship: 'link',
+                path: '/pets/{petId}',
+                method: 'GET',
+                via: 'getPet link in 201 response'
+            });
+        });
+
+        it('should include callback relationships', () => {
+            testSpecDocument.paths['/pets']!.post!.callbacks = {
+                onPetCreated: {
+                    '{$request.body#/callbackUrl}': {
+                        post: {
+                            operationId: 'petCreatedCallback',
+                            responses: {
+                                '200': { description: 'OK' }
+                            }
+                        }
+                    }
+                }
+            } as OpenAPIV3.CallbackObject;
+
+            testSpec = OpenAPISpecification.create(testSpecDocument, 'test-source');
+
+            const operation: OpenAPIV3.OperationObject = testSpecDocument.paths['/pets']!.post!;
+            const endpoint = Endpoint.create('/pets', 'POST', operation);
+
+            const result = analyzer.findRelatedEndpoints(testSpec, endpoint);
+
+            expect(result).toContainEqual({
+                relationship: 'callback',
+                path: '{$request.body#/callbackUrl}',
+                method: 'POST',
+                via: 'onPetCreated callback'
+            });
+        });
+
+        it('should include webhook relationships when referenced via operationRef', () => {
+            (testSpecDocument as any).webhooks = {
+                petStatusChanged: {
+                    post: {
+                        operationId: 'petStatusChanged',
+                        responses: {
+                            '200': { description: 'OK' }
+                        }
+                    }
+                }
+            };
+
+            (testSpecDocument.paths['/pets']!.post!.responses!['201'] as OpenAPIV3.ResponseObject).links = {
+                notifyWebhook: {
+                    operationRef: '#/webhooks/petStatusChanged/post'
+                }
+            };
+
+            testSpec = OpenAPISpecification.create(testSpecDocument, 'test-source');
+
+            const operation: OpenAPIV3.OperationObject = testSpecDocument.paths['/pets']!.post!;
+            const endpoint = Endpoint.create('/pets', 'POST', operation);
+
+            const result = analyzer.findRelatedEndpoints(testSpec, endpoint);
+
+            expect(result).toContainEqual({
+                relationship: 'webhook',
+                path: 'petStatusChanged',
+                method: 'POST',
+                via: 'notifyWebhook link in 201 response'
+            });
         });
     });
 });
