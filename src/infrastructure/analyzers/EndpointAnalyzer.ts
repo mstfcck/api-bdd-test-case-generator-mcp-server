@@ -229,7 +229,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
             return fromPaths;
         }
 
-        const webhooks = (document as any).webhooks as Record<string, unknown> | undefined;
+        const webhooks = (document as Record<string, unknown>).webhooks as Record<string, unknown> | undefined;
         if (webhooks) {
             return this.searchOperations(webhooks, 'webhook', document, operationId);
         }
@@ -244,13 +244,13 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
         operationId: string
     ): RelationshipTarget | null {
         for (const [pathKey, pathItem] of Object.entries(collection)) {
-            const resolvedPathItem = this.resolvePathItem(pathItem as any, document);
+            const resolvedPathItem = this.resolvePathItem(pathItem as PathItemObject | ReferenceObject, document);
             if (!resolvedPathItem) {
                 continue;
             }
 
             for (const method of HTTP_METHODS) {
-                const operation = (resolvedPathItem as any)[method] as (OpenAPIV3.OperationObject | OpenAPIV3_1.OperationObject | undefined);
+                const operation = (resolvedPathItem as Record<string, unknown>)[method] as (OpenAPIV3.OperationObject | OpenAPIV3_1.OperationObject | undefined);
                 if (operation?.operationId === operationId) {
                     return {
                         relationship,
@@ -356,7 +356,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
 
         const methods: string[] = [];
         for (const method of HTTP_METHODS) {
-            if ((pathItem as any)[method]) {
+            if ((pathItem as Record<string, unknown>)[method]) {
                 methods.push(method.toUpperCase());
             }
         }

@@ -1,6 +1,6 @@
 import { injectable, inject } from 'inversify';
 import { IStateRepository } from '../ports/index.js';
-import { IScenarioGenerator } from '../../domain/services/index.js';
+import { IGeneratorFactory } from '../../domain/services/index.js';
 import { GenerateScenariosRequest, GenerateScenariosResponse, ScenarioSummary } from '../dtos/index.js';
 import { Logger } from '../../shared/index.js';
 import { ScenarioType } from '../../domain/value-objects/index.js';
@@ -72,6 +72,3 @@ export class GenerateScenariosUseCase {
     }
 }
 
-interface IGeneratorFactory {
-    create(type: ScenarioType): IScenarioGenerator;
-}

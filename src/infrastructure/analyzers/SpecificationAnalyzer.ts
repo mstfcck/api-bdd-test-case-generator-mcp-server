@@ -52,23 +52,30 @@ export class SpecificationAnalyzer implements ISpecificationAnalyzer {
         spec.validate();
     }
 
-    private validateBasicStructure(spec: any): void {
-        if (!spec.openapi && !spec.swagger) {
+    private validateBasicStructure(spec: unknown): void {
+        if (typeof spec !== 'object' || spec === null) {
+            throw new ValidationError('Invalid specification: must be an object');
+        }
+
+        const typedSpec = spec as Record<string, unknown>;
+
+        if (!typedSpec.openapi && !typedSpec.swagger) {
             throw new ValidationError('Not a valid OpenAPI specification: missing openapi/swagger version');
         }
 
-        const version = spec.openapi || spec.swagger;
-        if (!version.startsWith('3.0') && !version.startsWith('3.1')) {
+        const version = typedSpec.openapi || typedSpec.swagger;
+        if (typeof version !== 'string' || (!version.startsWith('3.0') && !version.startsWith('3.1'))) {
             throw new ValidationError(
                 `Unsupported OpenAPI version: ${version}. Only 3.0.x and 3.1.x are supported`
             );
         }
 
-        if (!spec.paths || typeof spec.paths !== 'object') {
+        if (!typedSpec.paths || typeof typedSpec.paths !== 'object') {
             throw new ValidationError('Invalid specification: paths object is required');
         }
 
-        if (!spec.info || !spec.info.title || !spec.info.version) {
+        const info = typedSpec.info as Record<string, unknown> | undefined;
+        if (!info || typeof info !== 'object' || !info.title || !info.version) {
             throw new ValidationError('Invalid specification: info.title and info.version are required');
         }
     }

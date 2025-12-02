@@ -3,7 +3,7 @@ import { Container } from 'inversify';
 import { TYPES } from './types.js';
 
 // Domain Services
-import { ISpecificationAnalyzer, IRefResolver, IEndpointAnalyzer, IScenarioGenerator, IFeatureExporter } from '../domain/services/index.js';
+import { ISpecificationAnalyzer, IRefResolver, IEndpointAnalyzer, IFeatureExporter, IScenarioGenerator } from '../domain/services/index.js';
 
 // Application Ports
 import { ISpecificationRepository, IStateRepository, IFileSystem } from '../application/ports/index.js';
@@ -28,8 +28,15 @@ import {
     InMemoryStateRepository
 } from '../infrastructure/repositories/index.js';
 import { NodeFileSystem } from '../infrastructure/filesystem/index.js';
-import { GeneratorFactory } from '../infrastructure/generators/index.js';
+import { GeneratorFactory } from '../infrastructure/generators/GeneratorFactory.js';
+import { RequiredFieldsGenerator } from '../infrastructure/generators/RequiredFieldsGenerator.js';
+import { AllFieldsGenerator } from '../infrastructure/generators/AllFieldsGenerator.js';
+import { ValidationErrorGenerator } from '../infrastructure/generators/ValidationErrorGenerator.js';
+import { AuthErrorGenerator } from '../infrastructure/generators/AuthErrorGenerator.js';
+import { NotFoundGenerator } from '../infrastructure/generators/NotFoundGenerator.js';
+import { EdgeCaseGenerator } from '../infrastructure/generators/EdgeCaseGenerator.js';
 import { GherkinExporter } from '../infrastructure/exporters/index.js';
+import { RequestValidator } from '../infrastructure/mcp/RequestValidator.js';
 
 // Shared
 import { Logger } from '../shared/index.js';
@@ -51,8 +58,24 @@ export function createContainer(): Container {
     container.bind<IStateRepository>(TYPES.IStateRepository).to(InMemoryStateRepository).inSingletonScope();
     container.bind<IFileSystem>(TYPES.IFileSystem).to(NodeFileSystem).inSingletonScope();
 
+    // Bind Generators
+    container.bind(RequiredFieldsGenerator).toSelf().inSingletonScope();
+    container.bind(AllFieldsGenerator).toSelf().inSingletonScope();
+    container.bind(ValidationErrorGenerator).toSelf().inSingletonScope();
+    container.bind(AuthErrorGenerator).toSelf().inSingletonScope();
+    container.bind(NotFoundGenerator).toSelf().inSingletonScope();
+    container.bind(EdgeCaseGenerator).toSelf().inSingletonScope();
+
+    container.bind<IScenarioGenerator>(TYPES.IScenarioGenerator).toService(RequiredFieldsGenerator);
+    container.bind<IScenarioGenerator>(TYPES.IScenarioGenerator).toService(AllFieldsGenerator);
+    container.bind<IScenarioGenerator>(TYPES.IScenarioGenerator).toService(ValidationErrorGenerator);
+    container.bind<IScenarioGenerator>(TYPES.IScenarioGenerator).toService(AuthErrorGenerator);
+    container.bind<IScenarioGenerator>(TYPES.IScenarioGenerator).toService(NotFoundGenerator);
+    container.bind<IScenarioGenerator>(TYPES.IScenarioGenerator).toService(EdgeCaseGenerator);
+
     // Bind Factories
     container.bind(TYPES.GeneratorFactory).to(GeneratorFactory).inSingletonScope();
+    container.bind(TYPES.RequestValidator).to(RequestValidator).inSingletonScope();
 
     // Bind Use Cases
     container.bind<LoadSpecificationUseCase>(TYPES.LoadSpecificationUseCase).to(LoadSpecificationUseCase);

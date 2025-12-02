@@ -165,29 +165,39 @@ export class McpServerAdapter {
         });
     }
 
-    private async handleLoadSpec(args: any) {
+    private async handleLoadSpec(args: unknown) {
+        const validator = this.container.get<RequestValidator>(TYPES.RequestValidator);
+        const validatedArgs = validator.validateLoadSpec(args);
         const useCase = this.container.get<LoadSpecificationUseCase>(TYPES.LoadSpecificationUseCase);
-        return await useCase.execute(args);
+        return await useCase.execute(validatedArgs);
     }
 
-    private async handleListEndpoints(args: any) {
+    private async handleListEndpoints(args: unknown) {
+        const validator = this.container.get<RequestValidator>(TYPES.RequestValidator);
+        const validatedArgs = validator.validateListEndpoints(args || {});
         const useCase = this.container.get<ListEndpointsUseCase>(TYPES.ListEndpointsUseCase);
-        return await useCase.execute(args || {});
+        return await useCase.execute(validatedArgs);
     }
 
-    private async handleAnalyzeEndpoint(args: any) {
+    private async handleAnalyzeEndpoint(args: unknown) {
+        const validator = this.container.get<RequestValidator>(TYPES.RequestValidator);
+        const validatedArgs = validator.validateAnalyzeEndpoint(args);
         const useCase = this.container.get<AnalyzeEndpointUseCase>(TYPES.AnalyzeEndpointUseCase);
-        return await useCase.execute(args);
+        return await useCase.execute(validatedArgs);
     }
 
-    private async handleGenerateScenarios(args: any) {
+    private async handleGenerateScenarios(args: unknown) {
+        const validator = this.container.get<RequestValidator>(TYPES.RequestValidator);
+        const validatedArgs = validator.validateGenerateScenarios(args || {});
         const useCase = this.container.get<GenerateScenariosUseCase>(TYPES.GenerateScenariosUseCase);
-        return await useCase.execute(args || {});
+        return await useCase.execute(validatedArgs);
     }
 
-    private async handleExportFeature(args: any) {
+    private async handleExportFeature(args: unknown) {
+        const validator = this.container.get<RequestValidator>(TYPES.RequestValidator);
+        const validatedArgs = validator.validateExportFeature(args || {});
         const useCase = this.container.get<ExportFeatureUseCase>(TYPES.ExportFeatureUseCase);
-        return await useCase.execute(args || {});
+        return await useCase.execute(validatedArgs);
     }
 
     async start(): Promise<void> {

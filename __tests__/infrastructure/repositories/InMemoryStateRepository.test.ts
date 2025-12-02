@@ -49,25 +49,6 @@ describe('InMemoryStateRepository', () => {
         });
     });
 
-    describe('Snapshot', () => {
-        it('should return correct snapshot with data', async () => {
-            await repository.saveEndpointContext({ path: '/test' } as any);
-            await repository.saveScenarios([{ name: 'Test' }] as any);
-
-            const snapshot = await repository.getSnapshot();
-
-            expect(snapshot.hasEndpointContext).toBe(true);
-            expect(snapshot.scenarioCount).toBe(1);
-        });
-
-        it('should return correct snapshot when empty', async () => {
-            const snapshot = await repository.getSnapshot();
-
-            expect(snapshot.hasEndpointContext).toBe(false);
-            expect(snapshot.scenarioCount).toBe(0);
-        });
-    });
-
     describe('Clear state', () => {
         it('should clear all state', async () => {
             await repository.saveEndpointContext({ path: '/test' } as any);
@@ -76,12 +57,9 @@ describe('InMemoryStateRepository', () => {
 
             const retrievedContext = await repository.getEndpointContext();
             const retrievedScenarios = await repository.getScenarios();
-            const snapshot = await repository.getSnapshot();
 
             expect(retrievedContext).toBeNull();
             expect(retrievedScenarios).toEqual([]);
-            expect(snapshot.hasEndpointContext).toBe(false);
-            expect(snapshot.scenarioCount).toBe(0);
         });
     });
 });

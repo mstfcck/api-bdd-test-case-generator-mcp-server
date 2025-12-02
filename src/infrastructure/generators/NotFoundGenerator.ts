@@ -1,8 +1,10 @@
+import { injectable } from 'inversify';
 import { BaseScenarioGenerator } from './BaseScenarioGenerator.js';
 import { TestScenario } from '../../domain/entities/index.js';
 import { ScenarioType } from '../../domain/value-objects/index.js';
 import { type EndpointAnalysis } from '../../domain/services/index.js';
 
+@injectable()
 export class NotFoundGenerator extends BaseScenarioGenerator {
     getType(): ScenarioType {
         return ScenarioType.NOT_FOUND;
@@ -14,10 +16,10 @@ export class NotFoundGenerator extends BaseScenarioGenerator {
 
     generate(analysis: EndpointAnalysis): TestScenario[] {
         const steps = [
-            this.given('the API is available'),
-            this.when(`I send a ${analysis.method} request to ${analysis.path} with a non-existent resource ID`),
-            this.then('the response status should be 404'),
-            this.and('the response should contain a not found error')
+            this.createGiven('the API is available'),
+            this.createWhen(`I send a ${analysis.method} request to ${analysis.path} with a non-existent resource ID`),
+            this.createThen('the response status should be 404'),
+            this.createAnd('the response should contain a not found error')
         ];
 
         return [

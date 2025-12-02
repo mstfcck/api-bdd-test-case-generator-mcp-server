@@ -26,13 +26,5 @@ export interface IStateRepository {
      * Clear all state
      */
     clear(): Promise<void>;
-
-    /**
-     * Get current state snapshot
-     */
-    getSnapshot(): Promise<{
-        hasSpecification: boolean;
-        hasEndpointContext: boolean;
-        scenarioCount: number;
-    }>;
 }
+

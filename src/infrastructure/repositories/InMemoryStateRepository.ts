@@ -28,16 +28,5 @@ export class InMemoryStateRepository implements IStateRepository {
         this.endpointContext = null;
         this.scenarios = [];
     }
-
-    async getSnapshot(): Promise<{
-        hasSpecification: boolean;
-        hasEndpointContext: boolean;
-        scenarioCount: number;
-    }> {
-        return {
-            hasSpecification: false, // This would need to be tracked separately
-            hasEndpointContext: this.endpointContext !== null,
-            scenarioCount: this.scenarios.length
-        };
-    }
 }
+

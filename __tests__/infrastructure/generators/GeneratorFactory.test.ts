@@ -1,12 +1,26 @@
 import 'reflect-metadata';
 import { GeneratorFactory } from '../../../src/infrastructure/generators/GeneratorFactory';
 import { ScenarioType } from '../../../src/domain/value-objects/ScenarioType';
+import { RequiredFieldsGenerator } from '../../../src/infrastructure/generators/RequiredFieldsGenerator';
+import { AllFieldsGenerator } from '../../../src/infrastructure/generators/AllFieldsGenerator';
+import { ValidationErrorGenerator } from '../../../src/infrastructure/generators/ValidationErrorGenerator';
+import { AuthErrorGenerator } from '../../../src/infrastructure/generators/AuthErrorGenerator';
+import { NotFoundGenerator } from '../../../src/infrastructure/generators/NotFoundGenerator';
+import { EdgeCaseGenerator } from '../../../src/infrastructure/generators/EdgeCaseGenerator';
 
 describe('GeneratorFactory', () => {
     let factory: GeneratorFactory;
 
     beforeEach(() => {
-        factory = new GeneratorFactory();
+        const generators = [
+            new RequiredFieldsGenerator(),
+            new AllFieldsGenerator(),
+            new ValidationErrorGenerator(),
+            new AuthErrorGenerator(),
+            new NotFoundGenerator(),
+            new EdgeCaseGenerator()
+        ];
+        factory = new GeneratorFactory(generators);
     });
 
     describe('create', () => {

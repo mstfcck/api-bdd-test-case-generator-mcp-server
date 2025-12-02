@@ -3,8 +3,6 @@ import { ISpecificationRepository } from '../ports/index.js';
 import { ListEndpointsRequest, ListEndpointsResponse, EndpointInfo } from '../dtos/index.js';
 import { Logger } from '../../shared/index.js';
 import { SpecificationNotFoundError } from '../../domain/errors/index.js';
-import { HTTPMethod } from '../../domain/value-objects/index.js';
-import { Endpoint } from '../../domain/entities/index.js';
 import { TYPES } from '../../di/types.js';
 
 @injectable()

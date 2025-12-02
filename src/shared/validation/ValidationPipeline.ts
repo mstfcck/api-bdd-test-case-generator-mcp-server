@@ -1,4 +1,4 @@
-import { z, ZodSchema } from 'zod';
+import { z, ZodSchema, ZodType } from 'zod';
 import { ValidationError } from '../../domain/errors/index.js';
 
 export interface ValidationHandler<T = unknown> {
@@ -60,7 +60,7 @@ export class ValidationPipeline<T> implements ValidationHandler<T> {
 }
 
 export class ZodValidationHandler<T> implements ValidationHandler<T> {
-    constructor(private schema: ZodSchema<T>) { }
+    constructor(private schema: ZodType<T, any, any>) { }
 
     validate(input: T): ValidationResult<T> {
         const result = this.schema.safeParse(input);
@@ -123,7 +123,7 @@ export function createValidationPipeline<T>(): ValidationPipeline<T> {
     return new ValidationPipeline<T>();
 }
 
-export function zodValidator<T>(schema: ZodSchema<T>): ZodValidationHandler<T> {
+export function zodValidator<T>(schema: ZodType<T, any, any>): ZodValidationHandler<T> {
     return new ZodValidationHandler(schema);
 }
 

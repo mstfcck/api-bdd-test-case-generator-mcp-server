@@ -12,4 +12,5 @@ export {
     type RelatedEndpoint
 } from './IEndpointAnalyzer.js';
 export { IScenarioGenerator } from './IScenarioGenerator.js';
+export { IGeneratorFactory } from './IGeneratorFactory.js';
 export { IFeatureExporter, type ExportFormat } from './IFeatureExporter.js';

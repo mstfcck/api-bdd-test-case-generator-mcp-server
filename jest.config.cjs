@@ -26,6 +26,9 @@ module.exports = {
             },
         ],
     },
+    transformIgnorePatterns: [
+        'node_modules/(?!(@modelcontextprotocol)/)',
+    ],
     testMatch: ['**/__tests__/**/*.test.ts', '**/tests/**/*.test.ts'],
     collectCoverageFrom: [
         'src/**/*.ts',

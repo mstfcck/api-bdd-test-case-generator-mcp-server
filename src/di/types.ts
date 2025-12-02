@@ -21,6 +21,7 @@ export const TYPES = {
     // Infrastructure
     GeneratorFactory: Symbol.for('GeneratorFactory'),
     ExporterFactory: Symbol.for('ExporterFactory'),
+    RequestValidator: Symbol.for('RequestValidator'),
 
     // Shared
     Logger: Symbol.for('Logger')
