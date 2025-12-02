@@ -3,12 +3,14 @@ import { IRefResolver, type RefSchemaObject as SchemaObject, type ReferenceObjec
 import { CircularReferenceError, InvalidReferenceError } from '../../domain/errors/index.js';
 import type { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
 
+type OpenAPIDocument = OpenAPIV3.Document | OpenAPIV3_1.Document;
+
 @injectable()
 export class RefResolver implements IRefResolver {
     private cache: Map<string, any> = new Map();
     private resolving: Set<string> = new Set();
 
-    resolve<T = unknown>(ref: string, spec: OpenAPIV3.Document | OpenAPIV3_1.Document): T {
+    resolve<T = unknown>(ref: string, spec: OpenAPIDocument): T {
         // Check cache
         if (this.cache.has(ref)) {
             return this.cache.get(ref) as T;
@@ -36,7 +38,7 @@ export class RefResolver implements IRefResolver {
 
     resolveSchema(
         schema: SchemaObject | ReferenceObject,
-        spec: OpenAPIV3.Document | OpenAPIV3_1.Document
+        spec: OpenAPIDocument
     ): SchemaObject {
         if (this.isRef(schema)) {
             return this.resolve<SchemaObject>(schema.$ref, spec);
@@ -53,11 +55,11 @@ export class RefResolver implements IRefResolver {
         this.resolving.clear();
     }
 
-    private isRef(obj: any): obj is ReferenceObject {
+    private isRef(obj: unknown): obj is ReferenceObject {
         return !!(obj && typeof obj === 'object' && '$ref' in obj);
     }
 
-    private resolveLocal(ref: string, spec: any): any {
+    private resolveLocal(ref: string, spec: OpenAPIDocument): unknown {
         if (!ref.startsWith('#/')) {
             throw new InvalidReferenceError(
                 `Invalid local reference: ${ref}. Must start with #/`,
@@ -67,13 +69,13 @@ export class RefResolver implements IRefResolver {
         }
 
         const path = ref.substring(2).split('/');
-        let current: any = spec;
+        let current: unknown = spec;
 
         for (const segment of path) {
             // Handle escaped characters in segment
             const decodedSegment = segment.replace(/~1/g, '/').replace(/~0/g, '~');
 
-            if (current === undefined || current === null) {
+            if (typeof current !== 'object' || current === null || !(decodedSegment in current)) {
                 throw new InvalidReferenceError(
                     `Invalid reference: ${ref}. Path not found at segment: ${segment}`,
                     ref,
@@ -81,7 +83,7 @@ export class RefResolver implements IRefResolver {
                 );
             }
 
-            current = current[decodedSegment];
+            current = (current as Record<string, unknown>)[decodedSegment];
         }
 
         if (current === undefined) {

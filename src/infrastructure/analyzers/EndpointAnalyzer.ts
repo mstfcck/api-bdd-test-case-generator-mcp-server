@@ -1,5 +1,5 @@
 import { injectable, inject } from 'inversify';
-import { IEndpointAnalyzer, IRefResolver, type EndpointAnalysis, type AnalyzedParameter, type AnalyzedRequestBody, type AnalyzedResponse, type ResolvedSchema, type LinkInfo, type RelatedEndpoint } from '../../domain/services/index.js';
+import { IEndpointAnalyzer, IRefResolver, type EndpointAnalysis, type AnalyzedParameter, type AnalyzedRequestBody, type AnalyzedResponse, type ResolvedSchema, type Constraints, type LinkInfo, type RelatedEndpoint } from '../../domain/services/index.js';
 import { OpenAPISpecification, Endpoint } from '../../domain/entities/index.js';
 import { TYPES } from '../../di/types.js';
 import type { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
@@ -9,6 +9,25 @@ type ResponseObject = OpenAPIV3.ResponseObject | OpenAPIV3_1.ResponseObject;
 type LinkObject = OpenAPIV3.LinkObject | OpenAPIV3_1.LinkObject;
 type CallbackObject = OpenAPIV3.CallbackObject | OpenAPIV3_1.CallbackObject;
 type PathItemObject = OpenAPIV3.PathItemObject | OpenAPIV3_1.PathItemObject;
+type ReferenceObject = OpenAPIV3.ReferenceObject | OpenAPIV3_1.ReferenceObject;
+type ParameterObject = OpenAPIV3.ParameterObject | OpenAPIV3_1.ParameterObject;
+type RequestBodyObject = OpenAPIV3.RequestBodyObject | OpenAPIV3_1.RequestBodyObject;
+type ResponsesObject = OpenAPIV3.ResponsesObject | OpenAPIV3_1.ResponsesObject;
+type SchemaObject = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject;
+type CallbackMap = Record<string, CallbackObject | ReferenceObject>;
+
+type LinkOrWebhookRelationship = Extract<RelatedEndpoint['relationship'], 'link' | 'webhook'>;
+
+interface RelationshipTarget {
+    path: string;
+    method: string;
+    relationship: LinkOrWebhookRelationship;
+}
+
+interface RelationshipCollection {
+    links: LinkInfo[];
+    relatedEndpoints: RelatedEndpoint[];
+}
 
 interface ResponseLinkDetail {
     name: string;
@@ -17,7 +36,6 @@ interface ResponseLinkDetail {
 }
 
 const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'] as const;
-type HttpMethod = typeof HTTP_METHODS[number];
 
 @injectable()
 export class EndpointAnalyzer implements IEndpointAnalyzer {
@@ -38,7 +56,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
             : undefined;
 
         // Analyze responses
-        const responses = this.analyzeResponses(endpoint.getResponses() || {}, document);
+        const responses = this.analyzeResponses(endpoint.getResponses(), document);
 
         // Get security
         const security = endpoint.getSecurity();
@@ -70,12 +88,12 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
         return this.collectRelationshipData(endpoint, document).relatedEndpoints;
     }
 
-    private collectRelationshipData(endpoint: Endpoint, document: OpenAPIDocument): { links: LinkInfo[]; relatedEndpoints: RelatedEndpoint[] } {
+    private collectRelationshipData(endpoint: Endpoint, document: OpenAPIDocument): RelationshipCollection {
         const responseLinks = this.collectResponseLinks(endpoint.getResponses(), document);
         const links = this.mapToLinkInfo(responseLinks);
         const relatedFromLinks = this.mapRelatedEndpointsFromLinks(responseLinks, document);
         const relatedFromCallbacks = this.extractCallbackRelationships(
-            endpoint.getOperation().callbacks as CallbackObject | undefined,
+            endpoint.getOperation().callbacks as CallbackMap | undefined,
             document
         );
 
@@ -86,7 +104,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
     }
 
     private collectResponseLinks(
-        responses: Record<string, unknown> | undefined,
+        responses: ResponsesObject | undefined,
         document: OpenAPIDocument
     ): ResponseLinkDetail[] {
         if (!responses) {
@@ -149,7 +167,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
     }
 
     private extractCallbackRelationships(
-        callbacks: CallbackObject | undefined,
+        callbacks: CallbackMap | undefined,
         document: OpenAPIDocument
     ): RelatedEndpoint[] {
         if (!callbacks) {
@@ -184,7 +202,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
     private resolveLinkTarget(
         link: LinkObject,
         document: OpenAPIDocument
-    ): { path: string; method: string; relationship: 'link' | 'webhook' } | null {
+    ): RelationshipTarget | null {
         if (link.operationId) {
             const located = this.findOperationById(document, link.operationId);
             if (located) {
@@ -205,7 +223,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
     private findOperationById(
         document: OpenAPIDocument,
         operationId: string
-    ): { path: string; method: string; relationship: 'link' | 'webhook' } | null {
+    ): RelationshipTarget | null {
         const fromPaths = this.searchOperations(document.paths || {}, 'link', document, operationId);
         if (fromPaths) {
             return fromPaths;
@@ -221,10 +239,10 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
 
     private searchOperations(
         collection: Record<string, unknown>,
-        relationship: 'link' | 'webhook',
+        relationship: LinkOrWebhookRelationship,
         document: OpenAPIDocument,
         operationId: string
-    ): { path: string; method: string; relationship: 'link' | 'webhook' } | null {
+    ): RelationshipTarget | null {
         for (const [pathKey, pathItem] of Object.entries(collection)) {
             const resolvedPathItem = this.resolvePathItem(pathItem as any, document);
             if (!resolvedPathItem) {
@@ -236,7 +254,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
                 if (operation?.operationId === operationId) {
                     return {
                         relationship,
-                        path: relationship === 'link' ? pathKey : pathKey,
+                        path: pathKey,
                         method: method.toUpperCase()
                     };
                 }
@@ -248,7 +266,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
 
     private parseOperationRef(
         ref: string
-    ): { path: string; method: string; relationship: 'link' | 'webhook' } | null {
+    ): RelationshipTarget | null {
         const pointerIndex = ref.indexOf('#/');
         if (pointerIndex === -1) {
             return null;
@@ -279,41 +297,56 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
         return null;
     }
 
-    private resolveResponse(response: unknown, document: OpenAPIDocument): ResponseObject {
-        if (this.isRef(response)) {
-            return this.refResolver.resolve<ResponseObject>((response as any).$ref, document);
+    private resolveResponse(
+        response: ResponseObject | ReferenceObject | undefined,
+        document: OpenAPIDocument
+    ): ResponseObject {
+        if (!response) {
+            return { description: '' };
         }
-        return (response || { description: '' }) as ResponseObject;
+        if (this.isRef(response)) {
+            return this.refResolver.resolve<ResponseObject>(response.$ref, document);
+        }
+        return response;
     }
 
-    private resolveLink(link: unknown, document: OpenAPIDocument): LinkObject | null {
+    private resolveLink(
+        link: LinkObject | ReferenceObject | undefined,
+        document: OpenAPIDocument
+    ): LinkObject | null {
         if (!link) {
             return null;
         }
         if (this.isRef(link)) {
-            return this.refResolver.resolve<LinkObject>((link as any).$ref, document);
+            return this.refResolver.resolve<LinkObject>(link.$ref, document);
         }
-        return link as LinkObject;
+        return link;
     }
 
-    private resolveCallback(callback: unknown, document: OpenAPIDocument): CallbackObject | undefined {
+    private resolveCallback(
+        callback: CallbackObject | ReferenceObject | undefined,
+        document: OpenAPIDocument
+    ): CallbackObject | undefined {
         if (!callback) {
             return undefined;
         }
         if (this.isRef(callback)) {
-            return this.refResolver.resolve<CallbackObject>((callback as any).$ref, document);
+            return this.refResolver.resolve<CallbackObject>(callback.$ref, document);
         }
-        return callback as CallbackObject;
+        return callback;
     }
 
-    private resolvePathItem(pathItem: unknown, document: OpenAPIDocument): PathItemObject | undefined {
+    private resolvePathItem(
+        pathItem: PathItemObject | ReferenceObject | undefined,
+        document: OpenAPIDocument
+    ): PathItemObject | undefined {
         if (!pathItem) {
             return undefined;
         }
         if (this.isRef(pathItem)) {
-            return this.refResolver.resolve<PathItemObject>((pathItem as any).$ref, document);
+            return this.refResolver.resolve<PathItemObject>(pathItem.$ref, document);
         }
-        return pathItem as PathItemObject;
+        return pathItem;
     }
 
     private extractHttpMethods(pathItem: PathItemObject | undefined): string[] {
@@ -347,7 +380,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
         return segment.replace(/~1/g, '/').replace(/~0/g, '~');
     }
 
-    private analyzeParameters(params: any[], spec: any): AnalyzedParameter[] {
+    private analyzeParameters(params: ParameterObject[], spec: OpenAPIDocument): AnalyzedParameter[] {
         return params.map(param => {
             const resolved = this.resolveParameter(param, spec);
             const schema = this.resolveParameterSchema(resolved, spec);
@@ -355,7 +388,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
             return {
                 name: resolved.name,
                 in: resolved.in as 'path' | 'query' | 'header' | 'cookie',
-                required: resolved.required || resolved.in === 'path',
+                required: resolved.required ?? resolved.in === 'path',
                 schema,
                 description: resolved.description,
                 example: resolved.example
@@ -363,37 +396,40 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
         });
     }
 
-    private analyzeRequestBody(requestBody: any, spec: any): AnalyzedRequestBody {
-        const resolved = this.isRef(requestBody) ? this.refResolver.resolve(requestBody.$ref, spec) : requestBody;
-        const content = resolved.content || {};
+    private analyzeRequestBody(requestBody: RequestBodyObject | ReferenceObject, spec: OpenAPIDocument): AnalyzedRequestBody {
+        const resolved = this.isRef(requestBody) ? this.refResolver.resolve<RequestBodyObject>(requestBody.$ref, spec) : requestBody;
+        const content = resolved.content ?? {};
         const contentType = Object.keys(content)[0] || 'application/json';
-        const mediaType = content[contentType] || {};
+        const mediaType = content[contentType] ?? {};
 
-        const schema = this.resolveSchema(mediaType.schema, spec);
+        const schema = this.resolveSchema(mediaType.schema as SchemaObject | ReferenceObject | undefined, spec);
 
         return {
-            required: resolved.required || false,
+            required: resolved.required ?? false,
             contentType,
             schema,
             examples: mediaType.examples || {}
         };
     }
 
-    private analyzeResponses(responses: any, spec: any): Map<string, AnalyzedResponse> {
+    private analyzeResponses(responses: ResponsesObject | undefined, spec: OpenAPIDocument): Map<string, AnalyzedResponse> {
         const result = new Map<string, AnalyzedResponse>();
+        const responseEntries = responses ? Object.entries(responses) : [];
 
-        for (const [statusCode, response] of Object.entries(responses)) {
-            const resolved = this.isRef(response) ? this.refResolver.resolve((response as any).$ref, spec) : response;
-            const content = (resolved as any).content || {};
+        for (const [statusCode, response] of responseEntries) {
+            const resolved = this.resolveResponse(response as ResponseObject | ReferenceObject, spec);
+            const content = resolved.content ?? {};
             const contentType = Object.keys(content)[0];
-            const schema = contentType ? this.resolveSchema(content[contentType].schema, spec) : undefined;
+            const schema = contentType
+                ? this.resolveSchema(content[contentType].schema as SchemaObject | ReferenceObject | undefined, spec)
+                : undefined;
 
             result.set(statusCode, {
                 statusCode,
-                description: (resolved as any).description || '',
+                description: resolved.description || '',
                 schema,
                 examples: contentType ? (content[contentType].examples || {}) : {},
-                headers: (resolved as any).headers,
+                headers: resolved.headers,
                 links: []
             });
         }
@@ -401,32 +437,35 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
         return result;
     }
 
-    private resolveParameter(param: any, spec: any): any {
-        return this.isRef(param) ? this.refResolver.resolve(param.$ref, spec) : param;
+    private resolveParameter(param: ParameterObject | ReferenceObject, spec: OpenAPIDocument): ParameterObject {
+        return this.isRef(param) ? this.refResolver.resolve<ParameterObject>(param.$ref, spec) : param;
     }
 
-    private resolveParameterSchema(param: any, spec: any): ResolvedSchema {
-        const schema = param.schema
-            ? this.refResolver.resolveSchema(param.schema, spec)
-            : { type: 'string' } as any;
+    private resolveParameterSchema(param: ParameterObject, spec: OpenAPIDocument): ResolvedSchema {
+        const schema: SchemaObject = param.schema
+            ? this.refResolver.resolveSchema(param.schema as SchemaObject | ReferenceObject, spec)
+            : { type: 'string' };
 
         return {
-            schema: schema as any,
+            schema,
             constraints: this.extractConstraints(schema),
             examples: param.examples ? Object.values(param.examples) : []
         };
     }
 
-    private resolveSchema(schema: any, spec: any): ResolvedSchema {
+    private resolveSchema(schema: SchemaObject | ReferenceObject | undefined, spec: OpenAPIDocument): ResolvedSchema {
         if (!schema) {
+            const fallback: SchemaObject = { type: 'object' };
             return {
-                schema: { type: 'object' } as any,
+                schema: fallback,
                 constraints: {},
                 examples: []
             };
         }
 
-        const resolved = this.isRef(schema) ? this.refResolver.resolveSchema(schema, spec) : schema;
+        const resolved = this.isRef(schema)
+            ? this.refResolver.resolveSchema(schema, spec)
+            : schema;
 
         return {
             schema: resolved,
@@ -435,11 +474,11 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
         };
     }
 
-    private extractConstraints(schema: any): any {
+    private extractConstraints(schema: SchemaObject): Constraints {
         return {
             type: schema.type,
             required: schema.required,
-            properties: schema.properties,
+            properties: schema.properties as Record<string, Constraints> | undefined,
             minLength: schema.minLength,
             maxLength: schema.maxLength,
             pattern: schema.pattern,
@@ -452,7 +491,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
         };
     }
 
-    private isRef(obj: any): boolean {
+    private isRef(obj: unknown): obj is ReferenceObject {
         return !!(obj && typeof obj === 'object' && '$ref' in obj);
     }
 }
