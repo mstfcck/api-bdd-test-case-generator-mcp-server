@@ -2,7 +2,11 @@ import { injectable } from 'inversify';
 import { IScenarioGenerator } from '../../domain/services/index.js';
 import { ScenarioType } from '../../domain/value-objects/index.js';
 import { RequiredFieldsGenerator } from './RequiredFieldsGenerator.js';
-import { AllFieldsGenerator, ValidationErrorGenerator, AuthErrorGenerator, NotFoundGenerator, EdgeCaseGenerator } from './AllGenerators.js';
+import { AllFieldsGenerator } from './AllFieldsGenerator.js';
+import { ValidationErrorGenerator } from './ValidationErrorGenerator.js';
+import { AuthErrorGenerator } from './AuthErrorGenerator.js';
+import { NotFoundGenerator } from './NotFoundGenerator.js';
+import { EdgeCaseGenerator } from './EdgeCaseGenerator.js';
 
 @injectable()
 export class GeneratorFactory {
