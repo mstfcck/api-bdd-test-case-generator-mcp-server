@@ -14,3 +14,4 @@ export {
 export { IScenarioGenerator } from './IScenarioGenerator.js';
 export { IGeneratorFactory } from './IGeneratorFactory.js';
 export { IFeatureExporter, type ExportFormat } from './IFeatureExporter.js';
+export { IDataGenerator } from './IDataGenerator.js';

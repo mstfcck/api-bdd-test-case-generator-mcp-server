@@ -1,6 +1,7 @@
 import { injectable } from 'inversify';
 import { IFeatureExporter, type ExportFormat } from '../../domain/services/index.js';
 import { FeatureFile, TestScenario, type FeatureInfo, type FeatureMetadata } from '../../domain/entities/index.js';
+import { ValidationError } from '../../domain/errors/index.js';
 
 @injectable()
 export class GherkinExporter implements IFeatureExporter {
@@ -41,7 +42,7 @@ export class GherkinExporter implements IFeatureExporter {
             case 'markdown':
                 return this.exportMarkdown(featureFile);
             default:
-                throw new Error(`Unsupported format: ${format}`);
+                throw new ValidationError(`Unsupported format: ${format}`);
         }
     }
 

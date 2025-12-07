@@ -31,6 +31,7 @@ export interface Constraints {
     minItems?: number;
     maxItems?: number;
     uniqueItems?: boolean;
+    items?: Constraints;
 
     // Enum constraints
     enum?: unknown[];

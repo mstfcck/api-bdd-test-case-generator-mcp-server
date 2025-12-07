@@ -19,28 +19,28 @@ export abstract class BaseScenarioGenerator implements IScenarioGenerator {
         return TestScenario.createScenario(name, type, steps, tags);
     }
 
-    protected createGiven(text: string): Step {
-        return { keyword: 'Given', text };
+    protected createGiven(text: string, docString?: string): Step {
+        return { keyword: 'Given', text, docString };
     }
 
-    protected createWhen(text: string): Step {
-        return { keyword: 'When', text };
+    protected createWhen(text: string, docString?: string): Step {
+        return { keyword: 'When', text, docString };
     }
 
-    protected createThen(text: string): Step {
-        return { keyword: 'Then', text };
+    protected createThen(text: string, docString?: string): Step {
+        return { keyword: 'Then', text, docString };
     }
 
-    protected createAnd(text: string): Step {
-        return { keyword: 'And', text };
+    protected createAnd(text: string, docString?: string): Step {
+        return { keyword: 'And', text, docString };
     }
 
-    protected createBut(text: string): Step {
-        return { keyword: 'But', text };
+    protected createBut(text: string, docString?: string): Step {
+        return { keyword: 'But', text, docString };
     }
 
-    protected createStep(keyword: StepKeyword, text: string): Step {
-        return { keyword, text };
+    protected createStep(keyword: StepKeyword, text: string, docString?: string): Step {
+        return { keyword, text, docString };
     }
 
     protected formatEndpoint(analysis: EndpointAnalysis): string {

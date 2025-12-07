@@ -23,6 +23,16 @@ describe('AnalyzeEndpointUseCase Integration', () => {
     });
 
     describe('Analyze endpoint', () => {
+        it('should throw error when no specification is loaded', async () => {
+            const freshContainer = createContainer();
+            const freshAnalyzeUseCase = freshContainer.get<AnalyzeEndpointUseCase>(TYPES.AnalyzeEndpointUseCase);
+
+            await expect(freshAnalyzeUseCase.execute({
+                path: '/pets',
+                method: 'POST'
+            })).rejects.toThrow('No specification loaded');
+        });
+
         it('should analyze POST /pets endpoint', async () => {
             const result = await analyzeUseCase.execute({
                 path: '/pets',

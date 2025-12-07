@@ -4,6 +4,7 @@ export const TYPES = {
     IRefResolver: Symbol.for('IRefResolver'),
     IEndpointAnalyzer: Symbol.for('IEndpointAnalyzer'),
     IScenarioGenerator: Symbol.for('IScenarioGenerator'),
+    IDataGenerator: Symbol.for('IDataGenerator'),
     IFeatureExporter: Symbol.for('IFeatureExporter'),
 
     // Application Ports

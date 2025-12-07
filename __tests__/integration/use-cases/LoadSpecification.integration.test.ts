@@ -109,6 +109,36 @@ describe('LoadSpecificationUseCase Integration', () => {
             expect(result.success).toBe(true);
         });
 
+        it('should handle JSON content with explicit format', async () => {
+            const jsonSpec = JSON.stringify({
+                openapi: '3.0.0',
+                info: {
+                    title: 'JSON API',
+                    version: '1.0.0'
+                },
+                paths: {
+                    '/test': {
+                        get: {
+                            summary: 'Test endpoint',
+                            responses: {
+                                '200': {
+                                    description: 'OK'
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const result = await useCase.execute({
+                content: jsonSpec,
+                format: 'json'
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.specification.title).toBe('JSON API');
+        });
+
         it('should include path count in response', async () => {
             const result = await useCase.execute({
                 filePath: testSpecPath

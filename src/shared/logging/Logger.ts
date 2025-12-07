@@ -96,7 +96,13 @@ export class Logger {
 
     child(bindings: object): Logger {
         const childLogger = new Logger({ level: this.level, name: this.name });
-        childLogger.name = JSON.stringify({ ...JSON.parse(this.name), ...bindings });
+        let currentContext = {};
+        try {
+            currentContext = JSON.parse(this.name);
+        } catch (e) {
+            currentContext = { name: this.name };
+        }
+        childLogger.name = JSON.stringify({ ...currentContext, ...bindings });
         return childLogger;
     }
 }

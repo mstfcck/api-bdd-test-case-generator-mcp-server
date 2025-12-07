@@ -3,7 +3,7 @@ import { Container } from 'inversify';
 import { TYPES } from './types.js';
 
 // Domain Services
-import { ISpecificationAnalyzer, IRefResolver, IEndpointAnalyzer, IFeatureExporter, IScenarioGenerator } from '../domain/services/index.js';
+import { ISpecificationAnalyzer, IRefResolver, IEndpointAnalyzer, IFeatureExporter, IScenarioGenerator, IDataGenerator } from '../domain/services/index.js';
 
 // Application Ports
 import { ISpecificationRepository, IStateRepository, IFileSystem } from '../application/ports/index.js';
@@ -29,6 +29,7 @@ import {
 } from '../infrastructure/repositories/index.js';
 import { NodeFileSystem } from '../infrastructure/filesystem/index.js';
 import { GeneratorFactory } from '../infrastructure/generators/GeneratorFactory.js';
+import { DataGenerator } from '../infrastructure/generators/DataGenerator.js';
 import { RequiredFieldsGenerator } from '../infrastructure/generators/RequiredFieldsGenerator.js';
 import { AllFieldsGenerator } from '../infrastructure/generators/AllFieldsGenerator.js';
 import { ValidationErrorGenerator } from '../infrastructure/generators/ValidationErrorGenerator.js';
@@ -52,6 +53,7 @@ export function createContainer(): Container {
     container.bind<ISpecificationAnalyzer>(TYPES.ISpecificationAnalyzer).to(SpecificationAnalyzer).inSingletonScope();
     container.bind<IEndpointAnalyzer>(TYPES.IEndpointAnalyzer).to(EndpointAnalyzer).inSingletonScope();
     container.bind<IFeatureExporter>(TYPES.IFeatureExporter).to(GherkinExporter).inSingletonScope();
+    container.bind<IDataGenerator>(TYPES.IDataGenerator).to(DataGenerator).inSingletonScope();
 
     // Bind Repositories
     container.bind<ISpecificationRepository>(TYPES.ISpecificationRepository).to(InMemorySpecificationRepository).inSingletonScope();

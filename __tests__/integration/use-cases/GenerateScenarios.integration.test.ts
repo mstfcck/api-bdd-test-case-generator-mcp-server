@@ -5,6 +5,7 @@ import { GenerateScenariosUseCase } from '../../../src/application/use-cases/Gen
 import { LoadSpecificationUseCase } from '../../../src/application/use-cases/LoadSpecificationUseCase';
 import { AnalyzeEndpointUseCase } from '../../../src/application/use-cases/AnalyzeEndpointUseCase';
 import { ScenarioType } from '../../../src/domain/value-objects/ScenarioType';
+import { IStateRepository } from '../../../src/application/ports/IStateRepository';
 import { createContainer } from '../../../src/di/container';
 import * as path from 'path';
 
@@ -13,6 +14,7 @@ describe('GenerateScenariosUseCase Integration', () => {
     let generateUseCase: GenerateScenariosUseCase;
     let loadUseCase: LoadSpecificationUseCase;
     let analyzeUseCase: AnalyzeEndpointUseCase;
+    let stateRepository: IStateRepository;
     let testSpecPath: string;
 
     beforeEach(async () => {
@@ -21,6 +23,7 @@ describe('GenerateScenariosUseCase Integration', () => {
         generateUseCase = container.get<GenerateScenariosUseCase>(TYPES.GenerateScenariosUseCase);
         loadUseCase = container.get<LoadSpecificationUseCase>(TYPES.LoadSpecificationUseCase);
         analyzeUseCase = container.get<AnalyzeEndpointUseCase>(TYPES.AnalyzeEndpointUseCase);
+        stateRepository = container.get<IStateRepository>(TYPES.IStateRepository);
 
         testSpecPath = path.join(__dirname, '../../fixtures/petstore-simple.yaml');
         await loadUseCase.execute({ filePath: testSpecPath });
@@ -72,7 +75,9 @@ describe('GenerateScenariosUseCase Integration', () => {
             // Should succeed even if no auth scenarios generated (endpoint has no auth)
             expect(result.success).toBe(true);
             expect(result.scenarios.length).toBeGreaterThanOrEqual(0);
-        }); it('should generate not found scenario', async () => {
+        });
+
+        it('should generate not found scenario', async () => {
             await analyzeUseCase.execute({ path: '/pets/{petId}', method: 'GET' });
 
             const result = await generateUseCase.execute({
@@ -126,6 +131,17 @@ describe('GenerateScenariosUseCase Integration', () => {
             expect(result.totalCount).toBe(0);
         });
 
+        it('should generate all scenario types when scenarioTypes is undefined', async () => {
+            const result = await generateUseCase.execute({});
+
+            expect(result.success).toBe(true);
+            expect(result.scenarios.length).toBeGreaterThan(0);
+
+            const types = result.scenarios.map(s => s.type);
+            expect(types).toContain(ScenarioType.REQUIRED_FIELDS);
+            expect(types).toContain(ScenarioType.ALL_FIELDS);
+        });
+
         it('should include scenario metadata', async () => {
             const result = await generateUseCase.execute({
                 scenarioTypes: [ScenarioType.REQUIRED_FIELDS]
@@ -161,9 +177,7 @@ describe('GenerateScenariosUseCase Integration', () => {
             });
 
             expect(result.success).toBe(true);
-            // Edge case scenarios might have examples
             const scenariosWithExamples = result.scenarios.filter(s => s.exampleCount && s.exampleCount > 0);
-            // Either has examples or doesn't, both are valid
             expect(Array.isArray(scenariosWithExamples)).toBe(true);
         });
 
@@ -174,6 +188,79 @@ describe('GenerateScenariosUseCase Integration', () => {
 
             expect(result.scenarios[0].tags).toBeDefined();
             expect(Array.isArray(result.scenarios[0].tags)).toBe(true);
+        });
+
+        it('should generate all fields scenario for endpoint without request body', async () => {
+            await analyzeUseCase.execute({ path: '/pets/{petId}', method: 'GET' });
+
+            const result = await generateUseCase.execute({
+                scenarioTypes: [ScenarioType.ALL_FIELDS]
+            });
+
+            expect(result.success).toBe(true);
+            const scenarioSummary = result.scenarios.find(s => s.type === ScenarioType.ALL_FIELDS);
+            expect(scenarioSummary).toBeDefined();
+
+            // Verify steps from repository
+            const savedScenarios = await stateRepository.getScenarios();
+            const scenario = savedScenarios.find(s => s.getType() === ScenarioType.ALL_FIELDS);
+            expect(scenario).toBeDefined();
+
+            const whenStep = scenario?.getSteps().find(s => s.keyword === 'When');
+            expect(whenStep?.docString).toBeUndefined();
+        });
+
+        it('should generate required fields scenario for endpoint without request body', async () => {
+            await analyzeUseCase.execute({ path: '/pets/{petId}', method: 'GET' });
+
+            const result = await generateUseCase.execute({
+                scenarioTypes: [ScenarioType.REQUIRED_FIELDS]
+            });
+
+            expect(result.success).toBe(true);
+            const scenarioSummary = result.scenarios.find(s => s.type === ScenarioType.REQUIRED_FIELDS);
+            expect(scenarioSummary).toBeDefined();
+
+            // Verify steps from repository
+            const savedScenarios = await stateRepository.getScenarios();
+            const scenario = savedScenarios.find(s => s.getType() === ScenarioType.REQUIRED_FIELDS);
+            expect(scenario).toBeDefined();
+
+            const whenStep = scenario?.getSteps().find(s => s.keyword === 'When');
+            expect(whenStep?.docString).toBeUndefined();
+        });
+
+        it('should generate validation error scenario even when no request body', async () => {
+            await analyzeUseCase.execute({ path: '/pets/{petId}', method: 'GET' });
+
+            const result = await generateUseCase.execute({
+                scenarioTypes: [ScenarioType.VALIDATION_ERROR]
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.scenarios.length).toBeGreaterThan(0);
+            const scenarioSummary = result.scenarios.find(s => s.type === ScenarioType.VALIDATION_ERROR);
+            expect(scenarioSummary).toBeDefined();
+
+            // Verify steps from repository
+            const savedScenarios = await stateRepository.getScenarios();
+            const scenario = savedScenarios.find(s => s.getType() === ScenarioType.VALIDATION_ERROR);
+            expect(scenario).toBeDefined();
+
+            const whenStep = scenario?.getSteps().find(s => s.keyword === 'When');
+            expect(whenStep?.docString).toBeUndefined();
+        });
+
+        it('should return empty scenarios for not found when no path parameters', async () => {
+            // Re-analyze POST /pets which has no path parameters
+            await analyzeUseCase.execute({ path: '/pets', method: 'POST' });
+
+            const result = await generateUseCase.execute({
+                scenarioTypes: [ScenarioType.NOT_FOUND]
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.scenarios).toEqual([]);
         });
     });
 });

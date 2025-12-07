@@ -7,11 +7,12 @@ module.exports = {
         '^(\\.{1,2}/.*)\\.js$': '$1',
     },
     transform: {
-        '^.+\\.ts$': [
+        '^.+\\.(ts|js)$': [
             'ts-jest',
             {
                 useESM: true,
                 tsconfig: {
+                    allowJs: true,
                     module: 'ES2022',
                     target: 'ES2022',
                     moduleResolution: 'node',

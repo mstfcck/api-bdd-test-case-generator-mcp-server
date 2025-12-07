@@ -188,5 +188,17 @@ describe('ExportFeatureUseCase Integration', () => {
                 includeComments: true
             })).rejects.toThrow();
         });
+        it('should throw error when scenarios exist but endpoint context is missing', async () => {
+            // Scenarios are already generated in beforeEach
+
+            // Manually clear endpoint context
+            const stateRepo = container.get<any>(TYPES.IStateRepository);
+            stateRepo.endpointContext = null;
+
+            await expect(exportUseCase.execute({
+                format: 'gherkin',
+                includeComments: true
+            })).rejects.toThrow('No endpoint context found');
+        });
     });
 });

@@ -162,6 +162,18 @@ describe('ListEndpointsUseCase Integration', () => {
             expect(result.totalCount).toBe(0);
         });
 
+        it('should return empty array when filtering by non-existent tag', async () => {
+            await loadUseCase.execute({ filePath: testSpecPath });
+
+            const result = await listUseCase.execute({
+                filter: { tag: 'non-existent-tag' }
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.endpoints).toEqual([]);
+            expect(result.totalCount).toBe(0);
+        });
+
         it('should include endpoint metadata', async () => {
             await loadUseCase.execute({ filePath: testSpecPath });
 
@@ -172,6 +184,39 @@ describe('ListEndpointsUseCase Integration', () => {
             expect(result.endpoints[0]).toHaveProperty('operationId');
             expect(result.endpoints[0]).toHaveProperty('summary');
             expect(result.endpoints[0]).toHaveProperty('tags');
+        });
+
+        it('should skip invalid/null path items', async () => {
+            const invalidSpec = `
+openapi: 3.0.0
+info:
+  title: Invalid Path Spec
+  version: 1.0.0
+paths:
+  /valid:
+    get:
+      operationId: validOp
+      responses:
+        '200':
+          description: ok
+  /invalid: null
+`;
+            await loadUseCase.execute({ content: invalidSpec, format: 'yaml' });
+            const result = await listUseCase.execute({});
+            expect(result.success).toBe(true);
+            expect(result.endpoints.length).toBe(1);
+            expect(result.endpoints[0].path).toBe('/valid');
+        });
+
+        it('should handle empty filter object', async () => {
+            await loadUseCase.execute({ filePath: testSpecPath });
+
+            const result = await listUseCase.execute({
+                filter: {}
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.endpoints.length).toBe(3);
         });
     });
 });

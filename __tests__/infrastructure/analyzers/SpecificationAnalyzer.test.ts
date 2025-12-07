@@ -226,6 +226,18 @@ paths:
             await expect(analyzer.loadFromContent(invalidSpec, 'json'))
                 .rejects.toThrow('info.title and info.version are required');
         });
+
+        it('should throw ValidationError when parsed content is not an object', async () => {
+            const invalidContent = '"just a string"';
+            await expect(analyzer.loadFromContent(invalidContent, 'json'))
+                .rejects.toThrow('Invalid specification: must be an object');
+        });
+
+        it('should throw ValidationError when parsed content is null', async () => {
+            const invalidContent = 'null';
+            await expect(analyzer.loadFromContent(invalidContent, 'json'))
+                .rejects.toThrow('Invalid specification: must be an object');
+        });
     });
 
     describe('validate', () => {

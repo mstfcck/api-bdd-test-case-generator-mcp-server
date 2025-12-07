@@ -1,7 +1,9 @@
 import { injectable, inject } from 'inversify';
 import { IStateRepository } from '../ports/index.js';
 import { IGeneratorFactory } from '../../domain/services/index.js';
+import { StateError } from '../../domain/errors/index.js';
 import { GenerateScenariosRequest, GenerateScenariosResponse, ScenarioSummary } from '../dtos/index.js';
+
 import { Logger } from '../../shared/index.js';
 import { ScenarioType } from '../../domain/value-objects/index.js';
 import { TYPES } from '../../di/types.js';
@@ -20,8 +22,9 @@ export class GenerateScenariosUseCase {
         // Get endpoint context
         const analysis = await this.stateRepository.getEndpointContext();
         if (!analysis) {
-            throw new Error('No endpoint context found. Please analyze an endpoint first.');
+            throw new StateError('No endpoint context found. Please analyze an endpoint first.');
         }
+
 
         // Determine which scenario types to generate
         const typesToGenerate = request.scenarioTypes || Object.values(ScenarioType);

@@ -7,17 +7,25 @@ import { ValidationErrorGenerator } from '../../../src/infrastructure/generators
 import { AuthErrorGenerator } from '../../../src/infrastructure/generators/AuthErrorGenerator';
 import { NotFoundGenerator } from '../../../src/infrastructure/generators/NotFoundGenerator';
 import { EdgeCaseGenerator } from '../../../src/infrastructure/generators/EdgeCaseGenerator';
+import { IDataGenerator } from '../../../src/domain/services/IDataGenerator';
 
 describe('GeneratorFactory', () => {
     let factory: GeneratorFactory;
+    let mockDataGenerator: IDataGenerator;
 
     beforeEach(() => {
+        mockDataGenerator = {
+            generateValid: jest.fn(),
+            generateInvalid: jest.fn(),
+            generateIdentifier: jest.fn()
+        };
+
         const generators = [
-            new RequiredFieldsGenerator(),
-            new AllFieldsGenerator(),
-            new ValidationErrorGenerator(),
+            new RequiredFieldsGenerator(mockDataGenerator),
+            new AllFieldsGenerator(mockDataGenerator),
+            new ValidationErrorGenerator(mockDataGenerator),
             new AuthErrorGenerator(),
-            new NotFoundGenerator(),
+            new NotFoundGenerator(mockDataGenerator),
             new EdgeCaseGenerator()
         ];
         factory = new GeneratorFactory(generators);
@@ -64,6 +72,10 @@ describe('GeneratorFactory', () => {
 
             expect(generator).toBeDefined();
             expect(generator.getType()).toBe(ScenarioType.EDGE_CASE);
+        });
+
+        it('should throw error for unknown generator type', () => {
+            expect(() => factory.create('UNKNOWN_TYPE' as ScenarioType)).toThrow('No generator registered for type: UNKNOWN_TYPE');
         });
     });
 });

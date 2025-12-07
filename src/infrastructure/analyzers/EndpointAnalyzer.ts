@@ -448,7 +448,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
 
         return {
             schema,
-            constraints: this.extractConstraints(schema),
+            constraints: this.extractConstraints(schema, spec),
             examples: param.examples ? Object.values(param.examples) : []
         };
     }
@@ -469,16 +469,15 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
 
         return {
             schema: resolved,
-            constraints: this.extractConstraints(resolved),
+            constraints: this.extractConstraints(resolved, spec),
             examples: []
         };
     }
 
-    private extractConstraints(schema: SchemaObject): Constraints {
-        return {
+    private extractConstraints(schema: SchemaObject, spec: OpenAPIDocument): Constraints {
+        const constraints: Constraints = {
             type: schema.type,
             required: schema.required,
-            properties: schema.properties as Record<string, Constraints> | undefined,
             minLength: schema.minLength,
             maxLength: schema.maxLength,
             pattern: schema.pattern,
@@ -489,6 +488,27 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
             maxItems: schema.maxItems,
             enum: schema.enum
         };
+
+        if (schema.properties) {
+            constraints.properties = {};
+            for (const [key, prop] of Object.entries(schema.properties)) {
+                const resolvedProp = this.isRef(prop)
+                    ? this.refResolver.resolveSchema(prop, spec)
+                    : prop as SchemaObject;
+
+                constraints.properties[key] = this.extractConstraints(resolvedProp, spec);
+            }
+        }
+
+        if (schema.items) {
+            const resolvedItems = this.isRef(schema.items)
+                ? this.refResolver.resolveSchema(schema.items, spec)
+                : schema.items as SchemaObject;
+
+            constraints.items = this.extractConstraints(resolvedItems, spec);
+        }
+
+        return constraints;
     }
 
     private isRef(obj: unknown): obj is ReferenceObject {
