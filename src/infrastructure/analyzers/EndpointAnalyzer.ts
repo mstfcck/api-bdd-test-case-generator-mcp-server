@@ -500,7 +500,8 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
             }
         }
 
-        if (schema.items) {
+        // Only array schemas have 'items'
+        if (schema.type === 'array' && 'items' in schema && schema.items) {
             const resolvedItems = this.isRef(schema.items)
                 ? this.refResolver.resolveSchema(schema.items, spec)
                 : schema.items as SchemaObject;
