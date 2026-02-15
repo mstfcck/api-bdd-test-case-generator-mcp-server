@@ -1,7 +1,4 @@
-import type { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
-
-export type SchemaObject = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject;
-export type ReferenceObject = OpenAPIV3.ReferenceObject | OpenAPIV3_1.ReferenceObject;
+import type { SchemaObject, ReferenceObject, SchemaOrRef, OpenAPIDocument } from '../types/index.js';
 
 export interface IRefResolver {
     /**
@@ -9,15 +6,15 @@ export interface IRefResolver {
      */
     resolve<T = unknown>(
         ref: string,
-        spec: OpenAPIV3.Document | OpenAPIV3_1.Document
+        spec: OpenAPIDocument
     ): T;
 
     /**
      * Resolve a schema that may contain references
      */
     resolveSchema(
-        schema: SchemaObject | ReferenceObject,
-        spec: OpenAPIV3.Document | OpenAPIV3_1.Document
+        schema: SchemaOrRef,
+        spec: OpenAPIDocument
     ): SchemaObject;
 
     /**

@@ -1,7 +1,10 @@
-import type { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
+import type {
+    OpenAPIDocument,
+    PathItemObject,
+    ComponentsObject,
+    SecuritySchemeObject
+} from '../types/index.js';
 import { ValidationError } from '../errors/index.js';
-
-export type OpenAPIDocument = OpenAPIV3.Document | OpenAPIV3_1.Document;
 
 export interface SpecMetadata {
     title: string;
@@ -69,20 +72,20 @@ export class OpenAPISpecification {
         return !!this.document.paths?.[path];
     }
 
-    getPath(path: string): OpenAPIV3.PathItemObject | undefined {
-        return this.document.paths?.[path];
+    getPath(path: string): PathItemObject | undefined {
+        return this.document.paths?.[path] as PathItemObject | undefined;
     }
 
     getAllPaths(): string[] {
         return Object.keys(this.document.paths || {});
     }
 
-    getComponents(): OpenAPIV3.ComponentsObject | OpenAPIV3_1.ComponentsObject | undefined {
+    getComponents(): ComponentsObject | undefined {
         return this.document.components;
     }
 
-    getSecuritySchemes(): Record<string, OpenAPIV3.SecuritySchemeObject | OpenAPIV3_1.SecuritySchemeObject> | undefined {
-        return this.document.components?.securitySchemes as Record<string, OpenAPIV3.SecuritySchemeObject | OpenAPIV3_1.SecuritySchemeObject> | undefined;
+    getSecuritySchemes(): Record<string, SecuritySchemeObject> | undefined {
+        return this.document.components?.securitySchemes as Record<string, SecuritySchemeObject> | undefined;
     }
 
     validate(): void {

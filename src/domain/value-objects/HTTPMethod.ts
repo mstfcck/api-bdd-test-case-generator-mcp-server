@@ -1,3 +1,5 @@
+import { ValidationError } from '../errors/index.js';
+
 export class HTTPMethod {
     private static readonly VALID_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
 
@@ -5,8 +7,8 @@ export class HTTPMethod {
 
     static create(method: string): HTTPMethod {
         const normalized = method.toUpperCase();
-        if (!this.VALID_METHODS.includes(normalized as any)) {
-            throw new Error(`Invalid HTTP method: ${method}`);
+        if (!this.VALID_METHODS.includes(normalized as typeof this.VALID_METHODS[number])) {
+            throw new ValidationError(`Invalid HTTP method: ${method}`, 'method', method);
         }
         return new HTTPMethod(normalized);
     }

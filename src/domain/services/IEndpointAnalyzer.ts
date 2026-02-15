@@ -1,7 +1,5 @@
 import { Endpoint, OpenAPISpecification } from '../entities/index.js';
-import type { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
-
-export type SchemaObject = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject;
+import type { SchemaObject, OperationObject, SecurityRequirementObject } from '../types/index.js';
 
 export interface ResolvedSchema {
     schema: SchemaObject;
@@ -87,7 +85,7 @@ export interface RelatedEndpoint {
 export interface EndpointAnalysis {
     path: string;
     method: string;
-    operation: OpenAPIV3.OperationObject | OpenAPIV3_1.OperationObject;
+    operation: OperationObject;
     operationId?: string;
     summary?: string;
     description?: string;
@@ -96,7 +94,7 @@ export interface EndpointAnalysis {
     parameters: AnalyzedParameter[];
     requestBody?: AnalyzedRequestBody;
     responses: Map<string, AnalyzedResponse>;
-    security: Array<OpenAPIV3.SecurityRequirementObject | OpenAPIV3_1.SecurityRequirementObject>;
+    security: SecurityRequirementObject[];
     callbacks?: Record<string, unknown>;
     links: LinkInfo[];
     relatedEndpoints: RelatedEndpoint[];

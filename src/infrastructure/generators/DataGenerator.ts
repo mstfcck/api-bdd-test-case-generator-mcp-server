@@ -1,13 +1,13 @@
 import { injectable } from 'inversify';
-import { IDataGenerator, ResolvedSchema } from '../../domain/services/index.js';
+import { IDataGenerator, ResolvedSchema, type GeneratedValue, type Constraints } from '../../domain/services/index.js';
 
 @injectable()
 export class DataGenerator implements IDataGenerator {
-    generateValid(schema: ResolvedSchema, requiredOnly: boolean = false): any {
+    generateValid(schema: ResolvedSchema, requiredOnly: boolean = false): GeneratedValue {
         return this.generateValue(schema, true, requiredOnly);
     }
 
-    generateInvalid(schema: ResolvedSchema): any {
+    generateInvalid(schema: ResolvedSchema): GeneratedValue {
         // Simple strategy: return a type mismatch or violate constraints
         const type = schema.constraints.type;
 
@@ -20,7 +20,7 @@ export class DataGenerator implements IDataGenerator {
         return null;
     }
 
-    generateIdentifier(schema: ResolvedSchema): any {
+    generateIdentifier(schema: ResolvedSchema): GeneratedValue {
         const type = schema.constraints.type;
         if (type === 'integer' || type === 'number') {
             return 999999;
@@ -34,11 +34,11 @@ export class DataGenerator implements IDataGenerator {
         return 'unknown_id';
     }
 
-    private generateValue(schema: ResolvedSchema, isValid: boolean, requiredOnly: boolean): any {
+    private generateValue(schema: ResolvedSchema, isValid: boolean, requiredOnly: boolean): GeneratedValue {
         const { type, enum: enumValues, format } = schema.constraints;
 
         if (enumValues && enumValues.length > 0) {
-            return enumValues[0];
+            return enumValues[0] as GeneratedValue;
         }
 
         switch (type) {
@@ -67,32 +67,29 @@ export class DataGenerator implements IDataGenerator {
         return 'string_value';
     }
 
-    private generateNumber(constraints: any): number {
+    private generateNumber(constraints: Constraints): number {
         if (constraints.minimum !== undefined) return constraints.minimum;
         if (constraints.maximum !== undefined) return constraints.maximum;
         return 1;
     }
 
-    private generateArray(schema: ResolvedSchema, isValid: boolean, requiredOnly: boolean): any[] {
+    private generateArray(schema: ResolvedSchema, isValid: boolean, requiredOnly: boolean): GeneratedValue[] {
         const itemConstraints = schema.constraints.items;
         if (!itemConstraints) return [];
 
-        // Create a ResolvedSchema for the item using the constraints we now have
-        // We don't need the raw schema anymore because EndpointAnalyzer populates constraints recursively
         const resolvedItem: ResolvedSchema = {
-            schema: {} as any, // We don't need the raw schema for generation anymore
+            schema: {} as Record<string, unknown>,
             constraints: itemConstraints,
             examples: []
         };
 
-        // Generate one sample item
         return [this.generateValue(resolvedItem, isValid, requiredOnly)];
     }
 
-    private generateObject(schema: ResolvedSchema, isValid: boolean, requiredOnly: boolean): any {
+    private generateObject(schema: ResolvedSchema, isValid: boolean, requiredOnly: boolean): Record<string, GeneratedValue> {
         const props = schema.constraints.properties || {};
         const required = schema.constraints.required || [];
-        const result: any = {};
+        const result: Record<string, GeneratedValue> = {};
 
         for (const [key, propConstraints] of Object.entries(props)) {
             if (requiredOnly && !required.includes(key)) {
@@ -100,7 +97,7 @@ export class DataGenerator implements IDataGenerator {
             }
 
             const resolvedProp: ResolvedSchema = {
-                schema: {} as any, // We don't need the raw schema for generation anymore
+                schema: {} as Record<string, unknown>,
                 constraints: propConstraints,
                 examples: []
             };

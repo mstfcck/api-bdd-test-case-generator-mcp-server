@@ -2,18 +2,19 @@ import { injectable, inject } from 'inversify';
 import { ISpecificationRepository, IStateRepository } from '../ports/index.js';
 import { IEndpointAnalyzer } from '../../domain/services/index.js';
 import { AnalyzeEndpointRequest, AnalyzeEndpointResponse } from '../dtos/index.js';
-import { Logger } from '../../shared/index.js';
+import { type ILogger } from '../../shared/index.js';
 import { SpecificationNotFoundError } from '../../domain/errors/index.js';
 import { Endpoint } from '../../domain/entities/index.js';
+import type { OperationObject } from '../../domain/types/index.js';
 import { TYPES } from '../../di/types.js';
 
 @injectable()
 export class AnalyzeEndpointUseCase {
     constructor(
-        @inject(TYPES.ISpecificationRepository) private specRepository: ISpecificationRepository,
-        @inject(TYPES.IStateRepository) private stateRepository: IStateRepository,
-        @inject(TYPES.IEndpointAnalyzer) private endpointAnalyzer: IEndpointAnalyzer,
-        @inject(TYPES.Logger) private logger: Logger
+        @inject(TYPES.ISpecificationRepository) private readonly specRepository: ISpecificationRepository,
+        @inject(TYPES.IStateRepository) private readonly stateRepository: IStateRepository,
+        @inject(TYPES.IEndpointAnalyzer) private readonly endpointAnalyzer: IEndpointAnalyzer,
+        @inject(TYPES.ILogger) private readonly logger: ILogger
     ) { }
 
     async execute(request: AnalyzeEndpointRequest): Promise<AnalyzeEndpointResponse> {
@@ -30,8 +31,8 @@ export class AnalyzeEndpointUseCase {
             throw new Error(`Path not found: ${request.path}`);
         }
 
-        // Get the operation
-        const operation = (pathItem as any)[request.method.toLowerCase()];
+        // Get the operation using typed access
+        const operation = (pathItem as Record<string, unknown>)[request.method.toLowerCase()] as OperationObject | undefined;
         if (!operation) {
             throw new Error(`Method ${request.method} not found for path ${request.path}`);
         }

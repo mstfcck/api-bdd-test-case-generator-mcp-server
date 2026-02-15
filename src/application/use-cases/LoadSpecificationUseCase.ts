@@ -1,17 +1,17 @@
 import { injectable, inject } from 'inversify';
-import { ISpecificationAnalyzer } from '../../domain/services/index.js';
+import { ISpecificationParser } from '../../domain/services/index.js';
 import { ISpecificationRepository, IFileSystem } from '../ports/index.js';
 import { LoadSpecRequest, LoadSpecResponse } from '../dtos/index.js';
-import { Logger } from '../../shared/index.js';
+import { type ILogger } from '../../shared/index.js';
 import { TYPES } from '../../di/types.js';
 
 @injectable()
 export class LoadSpecificationUseCase {
     constructor(
-        @inject(TYPES.ISpecificationAnalyzer) private specAnalyzer: ISpecificationAnalyzer,
-        @inject(TYPES.ISpecificationRepository) private specRepository: ISpecificationRepository,
-        @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
-        @inject(TYPES.Logger) private logger: Logger
+        @inject(TYPES.ISpecificationParser) private readonly specParser: ISpecificationParser,
+        @inject(TYPES.ISpecificationRepository) private readonly specRepository: ISpecificationRepository,
+        @inject(TYPES.IFileSystem) private readonly fileSystem: IFileSystem,
+        @inject(TYPES.ILogger) private readonly logger: ILogger
     ) { }
 
     async execute(request: LoadSpecRequest): Promise<LoadSpecResponse> {
@@ -26,17 +26,19 @@ export class LoadSpecificationUseCase {
                 if (!exists) {
                     throw new Error(`File not found: ${request.filePath}`);
                 }
-                spec = await this.specAnalyzer.loadFromFile(request.filePath);
+                const content = await this.fileSystem.readFile(request.filePath);
+                const format = request.filePath.endsWith('.json') ? 'json' : 'yaml';
+                spec = await this.specParser.parse(content, format);
             } else if (request.content) {
                 // Load from content
                 const format = request.format || 'yaml';
-                spec = await this.specAnalyzer.loadFromContent(request.content, format);
+                spec = await this.specParser.parse(request.content, format);
             } else {
                 throw new Error('Either filePath or content must be provided');
             }
 
             // Validate specification
-            this.specAnalyzer.validate(spec);
+            this.specParser.validate(spec);
 
             // Save to repository
             await this.specRepository.save(spec);

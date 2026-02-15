@@ -8,7 +8,7 @@ import { TYPES } from '../../di/types.js';
 @injectable()
 export class NotFoundGenerator extends BaseScenarioGenerator {
     constructor(
-        @inject(TYPES.IDataGenerator) private dataGenerator: IDataGenerator
+        @inject(TYPES.IDataGenerator) private readonly dataGenerator: IDataGenerator
     ) {
         super();
     }

@@ -1,12 +1,12 @@
-import type { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
+import type {
+    OperationObject,
+    ParameterObject,
+    RequestBodyObject,
+    ResponsesObject,
+    SecurityRequirementObject
+} from '../types/index.js';
 import { HTTPMethod } from '../value-objects/index.js';
 import { ValidationError } from '../errors/index.js';
-
-export type OperationObject = OpenAPIV3.OperationObject | OpenAPIV3_1.OperationObject;
-export type ParameterObject = OpenAPIV3.ParameterObject | OpenAPIV3_1.ParameterObject;
-export type RequestBodyObject = OpenAPIV3.RequestBodyObject | OpenAPIV3_1.RequestBodyObject;
-export type ResponsesObject = OpenAPIV3.ResponsesObject | OpenAPIV3_1.ResponsesObject;
-export type SecurityRequirementObject = OpenAPIV3.SecurityRequirementObject | OpenAPIV3_1.SecurityRequirementObject;
 
 export class Endpoint {
     private constructor(

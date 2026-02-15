@@ -1,15 +1,19 @@
 import { injectable, inject } from 'inversify';
 import { ISpecificationRepository } from '../ports/index.js';
 import { ListEndpointsRequest, ListEndpointsResponse, EndpointInfo } from '../dtos/index.js';
-import { Logger } from '../../shared/index.js';
+import { type ILogger } from '../../shared/index.js';
 import { SpecificationNotFoundError } from '../../domain/errors/index.js';
+import type { PathItemObject, OperationObject, HttpMethodLower } from '../../domain/types/index.js';
+import { HTTP_METHODS } from '../../domain/types/index.js';
 import { TYPES } from '../../di/types.js';
+
+const STANDARD_HTTP_METHODS: HttpMethodLower[] = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'];
 
 @injectable()
 export class ListEndpointsUseCase {
     constructor(
-        @inject(TYPES.ISpecificationRepository) private specRepository: ISpecificationRepository,
-        @inject(TYPES.Logger) private logger: Logger
+        @inject(TYPES.ISpecificationRepository) private readonly specRepository: ISpecificationRepository,
+        @inject(TYPES.ILogger) private readonly logger: ILogger
     ) { }
 
     async execute(request: ListEndpointsRequest): Promise<ListEndpointsResponse> {
@@ -20,7 +24,6 @@ export class ListEndpointsUseCase {
             throw new SpecificationNotFoundError('No specification loaded. Please load a specification first.');
         }
 
-        const document = spec.getDocument();
         const endpoints: EndpointInfo[] = [];
 
         // Extract all endpoints
@@ -28,10 +31,8 @@ export class ListEndpointsUseCase {
             const pathItem = spec.getPath(path);
             if (!pathItem) continue;
 
-            const methods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'] as const;
-
-            for (const method of methods) {
-                const operation = (pathItem as any)[method];
+            for (const method of STANDARD_HTTP_METHODS) {
+                const operation = (pathItem as Record<string, unknown>)[method] as OperationObject | undefined;
                 if (!operation) continue;
 
                 const endpoint: EndpointInfo = {

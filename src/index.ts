@@ -2,7 +2,7 @@
 
 /**
  * MCP Server entry point for API Spec Test Case Generator
- * Clean Architecture implementation
+ * Clean Architecture implementation with Inversify DI
  */
 
 import 'reflect-metadata';
@@ -11,14 +11,10 @@ import { McpServerAdapter } from './infrastructure/mcp/McpServerAdapter.js';
 
 async function main() {
     try {
-        // Create DI container
         const container = createContainer();
-
-        // Create and start MCP server
-        const mcpServer = new McpServerAdapter(container);
+        const mcpServer = container.get(McpServerAdapter);
         await mcpServer.start();
 
-        // Handle graceful shutdown
         process.on('SIGINT', () => {
             console.error('SIGINT received, shutting down...');
             process.exit(0);

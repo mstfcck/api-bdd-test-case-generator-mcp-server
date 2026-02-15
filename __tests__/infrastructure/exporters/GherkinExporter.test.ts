@@ -10,7 +10,7 @@ describe('GherkinExporter', () => {
         exporter = new GherkinExporter();
     });
 
-    describe('exportFeature', () => {
+    describe('assemble', () => {
         it('should create FeatureFile with basic metadata', () => {
             const scenarios: any[] = [];
             const metadata = {
@@ -18,7 +18,7 @@ describe('GherkinExporter', () => {
                 openApiVersion: '3.0.0'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'post',
@@ -39,7 +39,7 @@ describe('GherkinExporter', () => {
                 operationId: 'createPet'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'post',
@@ -57,7 +57,7 @@ describe('GherkinExporter', () => {
                 openApiVersion: '3.0.0'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'get',
@@ -69,7 +69,7 @@ describe('GherkinExporter', () => {
         });
     });
 
-    describe('export - Gherkin format', () => {
+    describe('serialize - Gherkin format', () => {
         it('should export feature in Gherkin format', () => {
             const scenarios: any[] = [];
             const metadata = {
@@ -77,14 +77,14 @@ describe('GherkinExporter', () => {
                 openApiVersion: '3.0.0'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'post',
                 metadata
             );
 
-            const output = exporter.export(featureFile, 'gherkin');
+            const output = exporter.serialize(featureFile, 'gherkin');
 
             expect(output).toContain('Feature: POST /pets');
             expect(output).toContain('@api');
@@ -101,14 +101,14 @@ describe('GherkinExporter', () => {
                 operationId: 'createPet'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'post',
                 metadata
             );
 
-            const output = exporter.export(featureFile, 'gherkin');
+            const output = exporter.serialize(featureFile, 'gherkin');
 
             expect(output).toContain('# Operation ID: createPet');
         });
@@ -120,20 +120,20 @@ describe('GherkinExporter', () => {
                 openApiVersion: '3.0.0'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'post',
                 metadata
             );
 
-            const output = exporter.export(featureFile, 'gherkin');
+            const output = exporter.serialize(featureFile, 'gherkin');
 
             expect(output).not.toContain('# Operation ID:');
         });
     });
 
-    describe('export - JSON format', () => {
+    describe('serialize - JSON format', () => {
         it('should export feature in JSON format', () => {
             const scenarios: any[] = [];
             const metadata = {
@@ -141,14 +141,14 @@ describe('GherkinExporter', () => {
                 openApiVersion: '3.0.0'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'post',
                 metadata
             );
 
-            const output = exporter.export(featureFile, 'json');
+            const output = exporter.serialize(featureFile, 'json');
 
             const parsed = JSON.parse(output);
             expect(parsed.feature.name).toBe('POST /pets');
@@ -162,21 +162,21 @@ describe('GherkinExporter', () => {
                 openApiVersion: '3.0.0'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'post',
                 metadata
             );
 
-            const output = exporter.export(featureFile, 'json');
+            const output = exporter.serialize(featureFile, 'json');
 
             expect(output).toContain('  "feature"');
             expect(output).toContain('  "metadata"');
         });
     });
 
-    describe('export - Markdown format', () => {
+    describe('serialize - Markdown format', () => {
         it('should export feature in Markdown format', () => {
             const scenarios: any[] = [];
             const metadata = {
@@ -184,14 +184,14 @@ describe('GherkinExporter', () => {
                 openApiVersion: '3.0.0'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'post',
                 metadata
             );
 
-            const output = exporter.export(featureFile, 'markdown');
+            const output = exporter.serialize(featureFile, 'markdown');
 
             expect(output).toContain('# POST /pets');
             expect(output).toContain('## Metadata');
@@ -207,14 +207,14 @@ describe('GherkinExporter', () => {
                 operationId: 'createPet'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'post',
                 metadata
             );
 
-            const output = exporter.export(featureFile, 'markdown');
+            const output = exporter.serialize(featureFile, 'markdown');
 
             expect(output).toContain('- **Operation ID**: createPet');
         });
@@ -226,14 +226,14 @@ describe('GherkinExporter', () => {
                 openApiVersion: '3.0.0'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'post',
                 metadata
             );
 
-            const output = exporter.export(featureFile, 'markdown');
+            const output = exporter.serialize(featureFile, 'markdown');
 
             expect(output).not.toContain('- **Operation ID**:');
         });
@@ -245,20 +245,20 @@ describe('GherkinExporter', () => {
                 openApiVersion: '3.0.0'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'post',
                 metadata
             );
 
-            const output = exporter.export(featureFile, 'markdown');
+            const output = exporter.serialize(featureFile, 'markdown');
 
             expect(output).toContain('Test scenarios for POST /pets endpoint');
         });
     });
 
-    describe('export - Unsupported format', () => {
+    describe('serialize - Unsupported format', () => {
         it('should throw error for unsupported format', () => {
             const scenarios: any[] = [];
             const metadata = {
@@ -266,14 +266,14 @@ describe('GherkinExporter', () => {
                 openApiVersion: '3.0.0'
             };
 
-            const featureFile = exporter.exportFeature(
+            const featureFile = exporter.assemble(
                 scenarios,
                 '/pets',
                 'post',
                 metadata
             );
 
-            expect(() => exporter.export(featureFile, 'xml' as any))
+            expect(() => exporter.serialize(featureFile, 'xml' as any))
                 .toThrow('Unsupported format: xml');
         });
     });

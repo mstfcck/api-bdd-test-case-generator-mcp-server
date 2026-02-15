@@ -1,14 +1,12 @@
 import { injectable } from 'inversify';
-import { IRefResolver, type RefSchemaObject as SchemaObject, type ReferenceObject } from '../../domain/services/index.js';
+import { IRefResolver } from '../../domain/services/index.js';
 import { CircularReferenceError, InvalidReferenceError } from '../../domain/errors/index.js';
-import type { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
-
-type OpenAPIDocument = OpenAPIV3.Document | OpenAPIV3_1.Document;
+import type { OpenAPIDocument, SchemaObject, ReferenceObject, SchemaOrRef } from '../../domain/types/index.js';
 
 @injectable()
 export class RefResolver implements IRefResolver {
-    private cache: Map<string, any> = new Map();
-    private resolving: Set<string> = new Set();
+    private readonly cache = new Map<string, unknown>();
+    private readonly resolving = new Set<string>();
 
     resolve<T = unknown>(ref: string, spec: OpenAPIDocument): T {
         // Check cache
@@ -37,7 +35,7 @@ export class RefResolver implements IRefResolver {
     }
 
     resolveSchema(
-        schema: SchemaObject | ReferenceObject,
+        schema: SchemaOrRef,
         spec: OpenAPIDocument
     ): SchemaObject {
         if (this.isRef(schema)) {
@@ -96,7 +94,7 @@ export class RefResolver implements IRefResolver {
 
         // Recursively resolve if the result is also a reference
         if (this.isRef(current)) {
-            return this.resolve(current.$ref, spec);
+            return this.resolve((current as ReferenceObject).$ref, spec);
         }
 
         return current;

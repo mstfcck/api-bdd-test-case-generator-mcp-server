@@ -1,5 +1,5 @@
-export { ISpecificationAnalyzer } from './ISpecificationAnalyzer.js';
-export { IRefResolver, type SchemaObject as RefSchemaObject, type ReferenceObject } from './IRefResolver.js';
+export { ISpecificationParser } from './ISpecificationAnalyzer.js';
+export { IRefResolver } from './IRefResolver.js';
 export {
     IEndpointAnalyzer,
     type EndpointAnalysis,
@@ -12,6 +12,6 @@ export {
     type RelatedEndpoint
 } from './IEndpointAnalyzer.js';
 export { IScenarioGenerator } from './IScenarioGenerator.js';
-export { IGeneratorFactory } from './IGeneratorFactory.js';
-export { IFeatureExporter, type ExportFormat } from './IFeatureExporter.js';
-export { IDataGenerator } from './IDataGenerator.js';
+export { IScenarioGeneratorRegistry } from './IGeneratorFactory.js';
+export { IFeatureAssembler, IFeatureSerializer, type ExportFormat } from './IFeatureExporter.js';
+export { IDataGenerator, type GeneratedValue } from './IDataGenerator.js';

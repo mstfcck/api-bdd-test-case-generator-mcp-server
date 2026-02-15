@@ -1,3 +1,5 @@
+import { ILogger } from './ILogger.js';
+
 export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
 export interface LoggerConfig {
@@ -14,7 +16,7 @@ const LOG_LEVELS: Record<LogLevel, number> = {
     fatal: 60
 };
 
-export class Logger {
+export class Logger implements ILogger {
     private level: LogLevel;
     private name: string;
 
@@ -94,7 +96,7 @@ export class Logger {
         this.log('fatal', message, meta);
     }
 
-    child(bindings: object): Logger {
+    child(bindings: object): ILogger {
         const childLogger = new Logger({ level: this.level, name: this.name });
         let currentContext = {};
         try {

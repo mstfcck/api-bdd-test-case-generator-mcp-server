@@ -1,9 +1,11 @@
-import { z, ZodSchema, ZodType } from 'zod';
-import { ValidationError } from '../../domain/errors/index.js';
+import { ZodType, type ZodTypeDef } from 'zod';
 
-export interface ValidationHandler<T = unknown> {
+/**
+ * A single-concern validator interface.
+ * LSP-compliant: all implementations must fulfill the full contract.
+ */
+export interface Validator<T = unknown> {
     validate(input: T): ValidationResult<T>;
-    setNext(handler: ValidationHandler<T>): ValidationHandler<T>;
 }
 
 export interface ValidationResult<T = unknown> {
@@ -18,11 +20,15 @@ export interface ValidationErrorDetail {
     code: string;
 }
 
-export class ValidationPipeline<T> implements ValidationHandler<T> {
-    private handlers: ValidationHandler<T>[] = [];
+/**
+ * Composite validator that runs a pipeline of validators in sequence.
+ * Implements the Composite pattern — collects errors from all validators.
+ */
+export class ValidationPipeline<T> implements Validator<T> {
+    private readonly validators: Validator<T>[] = [];
 
-    add(handler: ValidationHandler<T>): this {
-        this.handlers.push(handler);
+    add(validator: Validator<T>): this {
+        this.validators.push(validator);
         return this;
     }
 
@@ -30,8 +36,8 @@ export class ValidationPipeline<T> implements ValidationHandler<T> {
         let currentData = input;
         const allErrors: ValidationErrorDetail[] = [];
 
-        for (const handler of this.handlers) {
-            const result = handler.validate(currentData);
+        for (const validator of this.validators) {
+            const result = validator.validate(currentData);
 
             if (!result.success) {
                 allErrors.push(...(result.errors || []));
@@ -52,15 +58,10 @@ export class ValidationPipeline<T> implements ValidationHandler<T> {
             data: currentData
         };
     }
-
-    setNext(handler: ValidationHandler<T>): ValidationHandler<T> {
-        this.handlers.push(handler);
-        return this;
-    }
 }
 
-export class ZodValidationHandler<T> implements ValidationHandler<T> {
-    constructor(private schema: ZodType<T, any, any>) { }
+export class ZodValidationHandler<T> implements Validator<T> {
+    constructor(private readonly schema: ZodType<T, ZodTypeDef, unknown>) { }
 
     validate(input: T): ValidationResult<T> {
         const result = this.schema.safeParse(input);
@@ -80,18 +81,14 @@ export class ZodValidationHandler<T> implements ValidationHandler<T> {
 
         return {
             success: true,
-            data: result.data
+            data: result.data as T
         };
-    }
-
-    setNext(handler: ValidationHandler<T>): ValidationHandler<T> {
-        throw new Error('ZodValidationHandler does not support chaining. Use ValidationPipeline instead.');
     }
 }
 
-export class CustomValidationHandler<T> implements ValidationHandler<T> {
+export class CustomValidationHandler<T> implements Validator<T> {
     constructor(
-        private validateFn: (input: T) => { valid: boolean; error?: string; field?: string }
+        private readonly validateFn: (input: T) => { valid: boolean; error?: string; field?: string }
     ) { }
 
     validate(input: T): ValidationResult<T> {
@@ -113,17 +110,13 @@ export class CustomValidationHandler<T> implements ValidationHandler<T> {
             data: input
         };
     }
-
-    setNext(handler: ValidationHandler<T>): ValidationHandler<T> {
-        throw new Error('CustomValidationHandler does not support chaining. Use ValidationPipeline instead.');
-    }
 }
 
 export function createValidationPipeline<T>(): ValidationPipeline<T> {
     return new ValidationPipeline<T>();
 }
 
-export function zodValidator<T>(schema: ZodType<T, any, any>): ZodValidationHandler<T> {
+export function zodValidator<T>(schema: ZodType<T, ZodTypeDef, unknown>): ZodValidationHandler<T> {
     return new ZodValidationHandler(schema);
 }
 

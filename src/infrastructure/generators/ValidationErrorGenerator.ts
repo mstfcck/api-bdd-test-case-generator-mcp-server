@@ -2,13 +2,13 @@ import { injectable, inject } from 'inversify';
 import { BaseScenarioGenerator } from './BaseScenarioGenerator.js';
 import { TestScenario } from '../../domain/entities/index.js';
 import { ScenarioType } from '../../domain/value-objects/index.js';
-import { type EndpointAnalysis, IDataGenerator } from '../../domain/services/index.js';
+import { type EndpointAnalysis, type GeneratedValue, IDataGenerator } from '../../domain/services/index.js';
 import { TYPES } from '../../di/types.js';
 
 @injectable()
 export class ValidationErrorGenerator extends BaseScenarioGenerator {
     constructor(
-        @inject(TYPES.IDataGenerator) private dataGenerator: IDataGenerator
+        @inject(TYPES.IDataGenerator) private readonly dataGenerator: IDataGenerator
     ) {
         super();
     }
@@ -18,7 +18,7 @@ export class ValidationErrorGenerator extends BaseScenarioGenerator {
     }
 
     generate(analysis: EndpointAnalysis): TestScenario[] {
-        let payload: any = undefined;
+        let payload: GeneratedValue | undefined = undefined;
 
         if (analysis.requestBody && analysis.requestBody.schema) {
             payload = this.dataGenerator.generateInvalid(analysis.requestBody.schema);

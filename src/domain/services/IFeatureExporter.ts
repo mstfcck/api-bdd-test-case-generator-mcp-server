@@ -2,11 +2,12 @@ import { FeatureFile, TestScenario } from '../entities/index.js';
 
 export type ExportFormat = 'gherkin' | 'json' | 'markdown';
 
-export interface IFeatureExporter {
-    /**
-     * Export scenarios to a feature file
-     */
-    exportFeature(
+/**
+ * Assembles test scenarios into a FeatureFile entity.
+ * Single responsibility: feature composition.
+ */
+export interface IFeatureAssembler {
+    assemble(
         scenarios: TestScenario[],
         endpoint: string,
         method: string,
@@ -16,9 +17,12 @@ export interface IFeatureExporter {
             operationId?: string;
         }
     ): FeatureFile;
+}
 
-    /**
-     * Export feature file to a specific format
-     */
-    export(featureFile: FeatureFile, format: ExportFormat): string;
+/**
+ * Serializes a FeatureFile entity to a specific output format.
+ * Single responsibility: format rendering.
+ */
+export interface IFeatureSerializer {
+    serialize(featureFile: FeatureFile, format: ExportFormat): string;
 }

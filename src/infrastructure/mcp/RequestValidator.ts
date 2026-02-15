@@ -1,5 +1,5 @@
 import { injectable } from 'inversify';
-import { z, ZodSchema, ZodType } from 'zod';
+import { ZodType, type ZodTypeDef } from 'zod';
 import { ValidationPipeline, zodValidator } from '../../shared/index.js';
 import {
     LoadSpecRequestSchema,
@@ -14,9 +14,13 @@ import {
     ExportFeatureRequest
 } from '../../application/dtos/index.js';
 
+/**
+ * @deprecated The MCP SDK now handles tool input validation via Zod schemas
+ * passed directly to registerTool(). This class is retained for non-MCP use.
+ */
 @injectable()
 export class RequestValidator {
-    validate<T>(schema: ZodType<T, any, any>, input: unknown): T {
+    validate<T>(schema: ZodType<T, ZodTypeDef, unknown>, input: unknown): T {
         const pipeline = new ValidationPipeline<T>();
         pipeline.add(zodValidator(schema));
 

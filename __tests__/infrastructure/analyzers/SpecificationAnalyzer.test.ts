@@ -1,14 +1,11 @@
 import 'reflect-metadata';
 import { SpecificationAnalyzer } from '../../../src/infrastructure/analyzers/SpecificationAnalyzer';
-import { IFileSystem } from '../../../src/application/ports/IFileSystem';
 import { ValidationError } from '../../../src/domain/errors/ValidationError';
-import type { OpenAPIV3 } from 'openapi-types';
 
 describe('SpecificationAnalyzer', () => {
     let analyzer: SpecificationAnalyzer;
-    let mockFileSystem: jest.Mocked<IFileSystem>;
 
-    const validSpec: OpenAPIV3.Document = {
+    const validSpec = {
         openapi: '3.0.0',
         info: {
             title: 'Test API',
@@ -26,60 +23,11 @@ describe('SpecificationAnalyzer', () => {
     };
 
     beforeEach(() => {
-        mockFileSystem = {
-            readFile: jest.fn(),
-            writeFile: jest.fn(),
-            exists: jest.fn()
-        } as any;
-
-        analyzer = new SpecificationAnalyzer(mockFileSystem);
+        analyzer = new SpecificationAnalyzer();
     });
 
-    describe('loadFromFile', () => {
-        it('should load YAML file successfully', async () => {
-            const yamlContent = `
-openapi: 3.0.0
-info:
-  title: Test API
-  version: 1.0.0
-paths:
-  /test:
-    get:
-      responses:
-        '200':
-          description: OK
-`;
-            mockFileSystem.readFile.mockResolvedValue(yamlContent);
-
-            const spec = await analyzer.loadFromFile('/path/to/spec.yaml');
-
-            expect(spec).toBeDefined();
-            expect(spec.getMetadata().title).toBe('Test API');
-            expect(mockFileSystem.readFile).toHaveBeenCalledWith('/path/to/spec.yaml');
-        });
-
-        it('should load JSON file successfully', async () => {
-            const jsonContent = JSON.stringify(validSpec);
-            mockFileSystem.readFile.mockResolvedValue(jsonContent);
-
-            const spec = await analyzer.loadFromFile('/path/to/spec.json');
-
-            expect(spec).toBeDefined();
-            expect(spec.getMetadata().title).toBe('Test API');
-        });
-
-        it('should detect format from file extension', async () => {
-            const jsonContent = JSON.stringify(validSpec);
-            mockFileSystem.readFile.mockResolvedValue(jsonContent);
-
-            await analyzer.loadFromFile('/path/to/spec.json');
-
-            expect(mockFileSystem.readFile).toHaveBeenCalledWith('/path/to/spec.json');
-        });
-    });
-
-    describe('loadFromContent', () => {
-        it('should load from YAML content', async () => {
+    describe('parse', () => {
+        it('should parse YAML content', async () => {
             const yamlContent = `
 openapi: 3.0.0
 info:
@@ -93,16 +41,16 @@ paths:
           description: OK
 `;
 
-            const spec = await analyzer.loadFromContent(yamlContent, 'yaml');
+            const spec = await analyzer.parse(yamlContent, 'yaml');
 
             expect(spec).toBeDefined();
             expect(spec.getMetadata().title).toBe('Test API');
         });
 
-        it('should load from JSON content', async () => {
+        it('should parse JSON content', async () => {
             const jsonContent = JSON.stringify(validSpec);
 
-            const spec = await analyzer.loadFromContent(jsonContent, 'json');
+            const spec = await analyzer.parse(jsonContent, 'json');
 
             expect(spec).toBeDefined();
             expect(spec.getMetadata().title).toBe('Test API');
@@ -111,14 +59,14 @@ paths:
         it('should throw ValidationError for invalid JSON', async () => {
             const invalidJson = '{ invalid json }';
 
-            await expect(analyzer.loadFromContent(invalidJson, 'json'))
+            await expect(analyzer.parse(invalidJson, 'json'))
                 .rejects.toThrow(ValidationError);
         });
 
         it('should throw ValidationError for invalid YAML', async () => {
             const invalidYaml = 'invalid: yaml: content: :::';
 
-            await expect(analyzer.loadFromContent(invalidYaml, 'yaml'))
+            await expect(analyzer.parse(invalidYaml, 'yaml'))
                 .rejects.toThrow(ValidationError);
         });
 
@@ -128,7 +76,7 @@ paths:
                 paths: {}
             });
 
-            await expect(analyzer.loadFromContent(invalidSpec, 'json'))
+            await expect(analyzer.parse(invalidSpec, 'json'))
                 .rejects.toThrow('Not a valid OpenAPI specification');
         });
 
@@ -139,7 +87,7 @@ paths:
                 paths: {}
             });
 
-            await expect(analyzer.loadFromContent(invalidSpec, 'json'))
+            await expect(analyzer.parse(invalidSpec, 'json'))
                 .rejects.toThrow('Unsupported OpenAPI version');
         });
 
@@ -147,7 +95,7 @@ paths:
             const spec30 = { ...validSpec, openapi: '3.0.3' };
             const content = JSON.stringify(spec30);
 
-            const result = await analyzer.loadFromContent(content, 'json');
+            const result = await analyzer.parse(content, 'json');
 
             expect(result).toBeDefined();
         });
@@ -156,7 +104,7 @@ paths:
             const spec31 = { ...validSpec, openapi: '3.1.0' };
             const content = JSON.stringify(spec31);
 
-            const result = await analyzer.loadFromContent(content, 'json');
+            const result = await analyzer.parse(content, 'json');
 
             expect(result).toBeDefined();
         });
@@ -169,7 +117,7 @@ paths:
             };
             const content = JSON.stringify(swaggerSpec);
 
-            const result = await analyzer.loadFromContent(content, 'json');
+            const result = await analyzer.parse(content, 'json');
 
             expect(result).toBeDefined();
         });
@@ -180,7 +128,7 @@ paths:
                 info: { title: 'Test', version: '1.0.0' }
             });
 
-            await expect(analyzer.loadFromContent(invalidSpec, 'json'))
+            await expect(analyzer.parse(invalidSpec, 'json'))
                 .rejects.toThrow('paths object is required');
         });
 
@@ -191,7 +139,7 @@ paths:
                 paths: 'invalid'
             });
 
-            await expect(analyzer.loadFromContent(invalidSpec, 'json'))
+            await expect(analyzer.parse(invalidSpec, 'json'))
                 .rejects.toThrow('paths object is required');
         });
 
@@ -202,7 +150,7 @@ paths:
                 paths: {}
             });
 
-            await expect(analyzer.loadFromContent(invalidSpec, 'json'))
+            await expect(analyzer.parse(invalidSpec, 'json'))
                 .rejects.toThrow('info.title and info.version are required');
         });
 
@@ -213,7 +161,7 @@ paths:
                 paths: {}
             });
 
-            await expect(analyzer.loadFromContent(invalidSpec, 'json'))
+            await expect(analyzer.parse(invalidSpec, 'json'))
                 .rejects.toThrow('info.title and info.version are required');
         });
 
@@ -223,26 +171,26 @@ paths:
                 paths: {}
             });
 
-            await expect(analyzer.loadFromContent(invalidSpec, 'json'))
+            await expect(analyzer.parse(invalidSpec, 'json'))
                 .rejects.toThrow('info.title and info.version are required');
         });
 
         it('should throw ValidationError when parsed content is not an object', async () => {
             const invalidContent = '"just a string"';
-            await expect(analyzer.loadFromContent(invalidContent, 'json'))
+            await expect(analyzer.parse(invalidContent, 'json'))
                 .rejects.toThrow('Invalid specification: must be an object');
         });
 
         it('should throw ValidationError when parsed content is null', async () => {
             const invalidContent = 'null';
-            await expect(analyzer.loadFromContent(invalidContent, 'json'))
+            await expect(analyzer.parse(invalidContent, 'json'))
                 .rejects.toThrow('Invalid specification: must be an object');
         });
     });
 
     describe('validate', () => {
         it('should validate specification', async () => {
-            const spec = await analyzer.loadFromContent(JSON.stringify(validSpec), 'json');
+            const spec = await analyzer.parse(JSON.stringify(validSpec), 'json');
 
             expect(() => analyzer.validate(spec)).not.toThrow();
         });

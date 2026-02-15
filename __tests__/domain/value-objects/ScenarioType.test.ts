@@ -1,64 +1,49 @@
 import 'reflect-metadata';
-import { ScenarioType, ScenarioTypeValue } from '../../../src/domain/value-objects/ScenarioType';
+import { ScenarioType } from '../../../src/domain/value-objects/ScenarioType';
 
 describe('ScenarioType', () => {
-    describe('Valid Scenario Types', () => {
-        test.each([
-            'required_fields',
-            'all_fields',
-            'validation_error',
-            'auth_error',
-            'not_found',
-            'edge_case',
-        ])('should create ScenarioTypeValue with valid type: %s', (type) => {
-            const scenarioType = ScenarioTypeValue.create(type);
-            expect(scenarioType.getValue()).toBe(type);
+    describe('Enum Values', () => {
+        it('should have required_fields value', () => {
+            expect(ScenarioType.REQUIRED_FIELDS).toBe('required_fields');
+        });
+
+        it('should have all_fields value', () => {
+            expect(ScenarioType.ALL_FIELDS).toBe('all_fields');
+        });
+
+        it('should have validation_error value', () => {
+            expect(ScenarioType.VALIDATION_ERROR).toBe('validation_error');
+        });
+
+        it('should have auth_error value', () => {
+            expect(ScenarioType.AUTH_ERROR).toBe('auth_error');
+        });
+
+        it('should have not_found value', () => {
+            expect(ScenarioType.NOT_FOUND).toBe('not_found');
+        });
+
+        it('should have edge_case value', () => {
+            expect(ScenarioType.EDGE_CASE).toBe('edge_case');
         });
     });
 
-    describe('Invalid Scenario Types', () => {
-        test.each([
-            'invalid_type',
-            'happy_path',
-            'VALIDATION_ERROR',
-            '',
-            ' ',
-        ])('should throw Error for invalid type: %s', (type) => {
-            expect(() => ScenarioTypeValue.create(type)).toThrow(Error);
-            expect(() => ScenarioTypeValue.create(type)).toThrow(`Invalid scenario type: ${type}`);
-        });
-    });
-
-    describe('Create from Enum', () => {
-        it('should create from enum value', () => {
-            const scenarioType = ScenarioTypeValue.fromEnum(ScenarioType.REQUIRED_FIELDS);
-            expect(scenarioType.getValue()).toBe(ScenarioType.REQUIRED_FIELDS);
-        });
-    });
-
-    describe('Equality', () => {
-        it('should return true for equal types', () => {
-            const type1 = ScenarioTypeValue.create('required_fields');
-            const type2 = ScenarioTypeValue.create('required_fields');
-            expect(type1.equals(type2)).toBe(true);
+    describe('Enum Completeness', () => {
+        it('should have exactly 6 scenario types', () => {
+            const values = Object.values(ScenarioType);
+            expect(values).toHaveLength(6);
         });
 
-        it('should return false for different types', () => {
-            const type1 = ScenarioTypeValue.create('required_fields');
-            const type2 = ScenarioTypeValue.create('validation_error');
-            expect(type1.equals(type2)).toBe(false);
-        });
-    });
-
-    describe('Type Properties', () => {
-        it('should return string representation', () => {
-            const type = ScenarioTypeValue.create('required_fields');
-            expect(type.toString()).toBe('required_fields');
-        });
-
-        it('should return display name', () => {
-            const type = ScenarioTypeValue.create('required_fields');
-            expect(type.getDisplayName()).toBe('Required Fields');
+        it('should contain all expected values', () => {
+            const values = Object.values(ScenarioType);
+            expect(values).toEqual(expect.arrayContaining([
+                'required_fields',
+                'all_fields',
+                'validation_error',
+                'auth_error',
+                'not_found',
+                'edge_case'
+            ]));
         });
     });
 });

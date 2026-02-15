@@ -1,18 +1,17 @@
 import { OpenAPISpecification } from '../entities/index.js';
 
-export interface ISpecificationAnalyzer {
+/**
+ * Domain service for parsing and validating OpenAPI specifications.
+ * No infrastructure concerns (file paths, formats) — those belong in application/infrastructure.
+ */
+export interface ISpecificationParser {
     /**
-     * Load and validate OpenAPI specification from file path
+     * Parse and create an OpenAPI specification from raw content.
      */
-    loadFromFile(filePath: string): Promise<OpenAPISpecification>;
+    parse(content: string, format: 'yaml' | 'json'): Promise<OpenAPISpecification>;
 
     /**
-     * Load and validate OpenAPI specification from content string
-     */
-    loadFromContent(content: string, format: 'yaml' | 'json'): Promise<OpenAPISpecification>;
-
-    /**
-     * Validate an OpenAPI specification document
+     * Validate an OpenAPI specification document structure.
      */
     validate(spec: OpenAPISpecification): void;
 }

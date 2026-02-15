@@ -1,3 +1,4 @@
+export { type ILogger } from './logging/ILogger.js';
 export { Logger, type LogLevel, type LoggerConfig } from './logging/Logger.js';
 export {
     ValidationPipeline,
@@ -6,7 +7,7 @@ export {
     createValidationPipeline,
     zodValidator,
     customValidator,
-    type ValidationHandler,
+    type Validator,
     type ValidationResult,
     type ValidationErrorDetail
 } from './validation/ValidationPipeline.js';

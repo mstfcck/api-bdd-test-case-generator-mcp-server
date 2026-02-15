@@ -2,18 +2,22 @@ import { injectable, inject } from 'inversify';
 import { IEndpointAnalyzer, IRefResolver, type EndpointAnalysis, type AnalyzedParameter, type AnalyzedRequestBody, type AnalyzedResponse, type ResolvedSchema, type Constraints, type LinkInfo, type RelatedEndpoint } from '../../domain/services/index.js';
 import { OpenAPISpecification, Endpoint } from '../../domain/entities/index.js';
 import { TYPES } from '../../di/types.js';
-import type { OpenAPIV3, OpenAPIV3_1 } from 'openapi-types';
+import type {
+    OpenAPIDocument,
+    SchemaObject,
+    ReferenceObject,
+    OperationObject,
+    ParameterObject,
+    RequestBodyObject,
+    ResponseObject,
+    ResponsesObject,
+    LinkObject,
+    CallbackObject,
+    PathItemObject,
+    SchemaOrRef
+} from '../../domain/types/index.js';
+import { HTTP_METHODS } from '../../domain/types/index.js';
 
-type OpenAPIDocument = OpenAPIV3.Document | OpenAPIV3_1.Document;
-type ResponseObject = OpenAPIV3.ResponseObject | OpenAPIV3_1.ResponseObject;
-type LinkObject = OpenAPIV3.LinkObject | OpenAPIV3_1.LinkObject;
-type CallbackObject = OpenAPIV3.CallbackObject | OpenAPIV3_1.CallbackObject;
-type PathItemObject = OpenAPIV3.PathItemObject | OpenAPIV3_1.PathItemObject;
-type ReferenceObject = OpenAPIV3.ReferenceObject | OpenAPIV3_1.ReferenceObject;
-type ParameterObject = OpenAPIV3.ParameterObject | OpenAPIV3_1.ParameterObject;
-type RequestBodyObject = OpenAPIV3.RequestBodyObject | OpenAPIV3_1.RequestBodyObject;
-type ResponsesObject = OpenAPIV3.ResponsesObject | OpenAPIV3_1.ResponsesObject;
-type SchemaObject = OpenAPIV3.SchemaObject | OpenAPIV3_1.SchemaObject;
 type CallbackMap = Record<string, CallbackObject | ReferenceObject>;
 
 type LinkOrWebhookRelationship = Extract<RelatedEndpoint['relationship'], 'link' | 'webhook'>;
@@ -34,8 +38,6 @@ interface ResponseLinkDetail {
     statusCode: string;
     link: LinkObject;
 }
-
-const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'] as const;
 
 @injectable()
 export class EndpointAnalyzer implements IEndpointAnalyzer {
@@ -121,7 +123,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
             }
 
             for (const [linkName, linkValue] of Object.entries(links)) {
-                const resolvedLink = this.resolveLink(linkValue as any, document);
+                const resolvedLink = this.resolveLink(linkValue as LinkObject | ReferenceObject, document);
                 if (!resolvedLink) {
                     continue;
                 }
@@ -177,13 +179,13 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
         const related: RelatedEndpoint[] = [];
 
         for (const [callbackName, callbackValue] of Object.entries(callbacks)) {
-            const resolvedCallback = this.resolveCallback(callbackValue as any, document);
+            const resolvedCallback = this.resolveCallback(callbackValue as CallbackObject | ReferenceObject, document);
             if (!resolvedCallback) {
                 continue;
             }
 
             for (const [expression, pathItem] of Object.entries(resolvedCallback)) {
-                const resolvedPathItem = this.resolvePathItem(pathItem as any, document);
+                const resolvedPathItem = this.resolvePathItem(pathItem as PathItemObject | ReferenceObject, document);
                 const methods = this.extractHttpMethods(resolvedPathItem);
                 for (const method of methods) {
                     related.push({
@@ -250,7 +252,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
             }
 
             for (const method of HTTP_METHODS) {
-                const operation = (resolvedPathItem as Record<string, unknown>)[method] as (OpenAPIV3.OperationObject | OpenAPIV3_1.OperationObject | undefined);
+                const operation = (resolvedPathItem as Record<string, unknown>)[method] as (OperationObject | undefined);
                 if (operation?.operationId === operationId) {
                     return {
                         relationship,
@@ -402,7 +404,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
         const contentType = Object.keys(content)[0] || 'application/json';
         const mediaType = content[contentType] ?? {};
 
-        const schema = this.resolveSchema(mediaType.schema as SchemaObject | ReferenceObject | undefined, spec);
+        const schema = this.resolveSchema(mediaType.schema as SchemaOrRef | undefined, spec);
 
         return {
             required: resolved.required ?? false,
@@ -443,7 +445,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
 
     private resolveParameterSchema(param: ParameterObject, spec: OpenAPIDocument): ResolvedSchema {
         const schema: SchemaObject = param.schema
-            ? this.refResolver.resolveSchema(param.schema as SchemaObject | ReferenceObject, spec)
+            ? this.refResolver.resolveSchema(param.schema as SchemaOrRef, spec)
             : { type: 'string' };
 
         return {
@@ -453,7 +455,7 @@ export class EndpointAnalyzer implements IEndpointAnalyzer {
         };
     }
 
-    private resolveSchema(schema: SchemaObject | ReferenceObject | undefined, spec: OpenAPIDocument): ResolvedSchema {
+    private resolveSchema(schema: SchemaOrRef | undefined, spec: OpenAPIDocument): ResolvedSchema {
         if (!schema) {
             const fallback: SchemaObject = { type: 'object' };
             return {

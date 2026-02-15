@@ -8,8 +8,7 @@ describe('ValidationPipeline Coverage', () => {
                 validate: jest.fn().mockReturnValue({
                     success: false,
                     errors: undefined // Explicitly undefined to hit the || [] branch
-                }),
-                setNext: jest.fn()
+                })
             };
 
             pipeline.add(validator);
@@ -27,15 +26,13 @@ describe('ValidationPipeline Coverage', () => {
                 validate: jest.fn().mockReturnValue({
                     success: true,
                     data: 'transformed' // Return transformed data
-                }),
-                setNext: jest.fn()
+                })
             };
 
             const nextValidator = {
                 validate: jest.fn().mockReturnValue({
                     success: true
-                }),
-                setNext: jest.fn()
+                })
             };
 
             pipeline.add(transformValidator);

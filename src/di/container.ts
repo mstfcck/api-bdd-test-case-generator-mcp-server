@@ -3,7 +3,16 @@ import { Container } from 'inversify';
 import { TYPES } from './types.js';
 
 // Domain Services
-import { ISpecificationAnalyzer, IRefResolver, IEndpointAnalyzer, IFeatureExporter, IScenarioGenerator, IDataGenerator } from '../domain/services/index.js';
+import {
+    ISpecificationParser,
+    IRefResolver,
+    IEndpointAnalyzer,
+    IFeatureAssembler,
+    IFeatureSerializer,
+    IScenarioGenerator,
+    IScenarioGeneratorRegistry,
+    IDataGenerator
+} from '../domain/services/index.js';
 
 // Application Ports
 import { ISpecificationRepository, IStateRepository, IFileSystem } from '../application/ports/index.js';
@@ -28,7 +37,7 @@ import {
     InMemoryStateRepository
 } from '../infrastructure/repositories/index.js';
 import { NodeFileSystem } from '../infrastructure/filesystem/index.js';
-import { GeneratorFactory } from '../infrastructure/generators/GeneratorFactory.js';
+import { ScenarioGeneratorRegistry } from '../infrastructure/generators/GeneratorFactory.js';
 import { DataGenerator } from '../infrastructure/generators/DataGenerator.js';
 import { RequiredFieldsGenerator } from '../infrastructure/generators/RequiredFieldsGenerator.js';
 import { AllFieldsGenerator } from '../infrastructure/generators/AllFieldsGenerator.js';
@@ -37,23 +46,27 @@ import { AuthErrorGenerator } from '../infrastructure/generators/AuthErrorGenera
 import { NotFoundGenerator } from '../infrastructure/generators/NotFoundGenerator.js';
 import { EdgeCaseGenerator } from '../infrastructure/generators/EdgeCaseGenerator.js';
 import { GherkinExporter } from '../infrastructure/exporters/index.js';
-import { RequestValidator } from '../infrastructure/mcp/RequestValidator.js';
+import { McpServerAdapter } from '../infrastructure/mcp/McpServerAdapter.js';
 
 // Shared
-import { Logger } from '../shared/index.js';
+import { Logger, type ILogger } from '../shared/index.js';
 
 export function createContainer(): Container {
     const container = new Container();
 
-    // Bind Logger
-    container.bind<Logger>(TYPES.Logger).toConstantValue(new Logger({ level: 'info' }));
+    // Bind Logger (ILogger interface)
+    container.bind<ILogger>(TYPES.ILogger).toConstantValue(new Logger({ level: 'info' }));
 
     // Bind Domain Services
     container.bind<IRefResolver>(TYPES.IRefResolver).to(RefResolver).inSingletonScope();
-    container.bind<ISpecificationAnalyzer>(TYPES.ISpecificationAnalyzer).to(SpecificationAnalyzer).inSingletonScope();
+    container.bind<ISpecificationParser>(TYPES.ISpecificationParser).to(SpecificationAnalyzer).inSingletonScope();
     container.bind<IEndpointAnalyzer>(TYPES.IEndpointAnalyzer).to(EndpointAnalyzer).inSingletonScope();
-    container.bind<IFeatureExporter>(TYPES.IFeatureExporter).to(GherkinExporter).inSingletonScope();
     container.bind<IDataGenerator>(TYPES.IDataGenerator).to(DataGenerator).inSingletonScope();
+
+    // Bind Feature Assembler + Serializer (same implementation, two interfaces)
+    container.bind<GherkinExporter>(GherkinExporter).toSelf().inSingletonScope();
+    container.bind<IFeatureAssembler>(TYPES.IFeatureAssembler).toService(GherkinExporter);
+    container.bind<IFeatureSerializer>(TYPES.IFeatureSerializer).toService(GherkinExporter);
 
     // Bind Repositories
     container.bind<ISpecificationRepository>(TYPES.ISpecificationRepository).to(InMemorySpecificationRepository).inSingletonScope();
@@ -75,9 +88,8 @@ export function createContainer(): Container {
     container.bind<IScenarioGenerator>(TYPES.IScenarioGenerator).toService(NotFoundGenerator);
     container.bind<IScenarioGenerator>(TYPES.IScenarioGenerator).toService(EdgeCaseGenerator);
 
-    // Bind Factories
-    container.bind(TYPES.GeneratorFactory).to(GeneratorFactory).inSingletonScope();
-    container.bind(TYPES.RequestValidator).to(RequestValidator).inSingletonScope();
+    // Bind Scenario Generator Registry
+    container.bind<IScenarioGeneratorRegistry>(TYPES.IScenarioGeneratorRegistry).to(ScenarioGeneratorRegistry).inSingletonScope();
 
     // Bind Use Cases
     container.bind<LoadSpecificationUseCase>(TYPES.LoadSpecificationUseCase).to(LoadSpecificationUseCase);
@@ -85,6 +97,9 @@ export function createContainer(): Container {
     container.bind<AnalyzeEndpointUseCase>(TYPES.AnalyzeEndpointUseCase).to(AnalyzeEndpointUseCase);
     container.bind<GenerateScenariosUseCase>(TYPES.GenerateScenariosUseCase).to(GenerateScenariosUseCase);
     container.bind<ExportFeatureUseCase>(TYPES.ExportFeatureUseCase).to(ExportFeatureUseCase);
+
+    // Bind MCP Server Adapter
+    container.bind(McpServerAdapter).toSelf().inSingletonScope();
 
     return container;
 }

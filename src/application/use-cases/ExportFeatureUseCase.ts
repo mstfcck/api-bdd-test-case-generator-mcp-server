@@ -1,19 +1,20 @@
 import { injectable, inject } from 'inversify';
-import { IStateRepository, IFileSystem } from '../ports/index.js';
-import { IFeatureExporter } from '../../domain/services/index.js';
+import { IStateRepository, IFileSystem, ISpecificationRepository } from '../ports/index.js';
+import { IFeatureAssembler, IFeatureSerializer } from '../../domain/services/index.js';
 import { StateError } from '../../domain/errors/index.js';
 import { ExportFeatureRequest, ExportFeatureResponse } from '../dtos/index.js';
-
-import { Logger } from '../../shared/index.js';
+import { type ILogger } from '../../shared/index.js';
 import { TYPES } from '../../di/types.js';
 
 @injectable()
 export class ExportFeatureUseCase {
     constructor(
-        @inject(TYPES.IStateRepository) private stateRepository: IStateRepository,
-        @inject(TYPES.IFeatureExporter) private featureExporter: IFeatureExporter,
-        @inject(TYPES.IFileSystem) private fileSystem: IFileSystem,
-        @inject(TYPES.Logger) private logger: Logger
+        @inject(TYPES.IStateRepository) private readonly stateRepository: IStateRepository,
+        @inject(TYPES.ISpecificationRepository) private readonly specRepository: ISpecificationRepository,
+        @inject(TYPES.IFeatureAssembler) private readonly featureAssembler: IFeatureAssembler,
+        @inject(TYPES.IFeatureSerializer) private readonly featureSerializer: IFeatureSerializer,
+        @inject(TYPES.IFileSystem) private readonly fileSystem: IFileSystem,
+        @inject(TYPES.ILogger) private readonly logger: ILogger
     ) { }
 
     async execute(request: ExportFeatureRequest): Promise<ExportFeatureResponse> {
@@ -31,21 +32,25 @@ export class ExportFeatureUseCase {
             throw new StateError('No endpoint context found.');
         }
 
+        // Get actual spec metadata instead of hardcoded values
+        const spec = await this.specRepository.get();
+        const specSource = spec?.getSource() ?? 'unknown';
+        const specVersion = spec?.getOpenApiVersion() ?? 'unknown';
 
         // Create feature file
-        const featureFile = this.featureExporter.exportFeature(
+        const featureFile = this.featureAssembler.assemble(
             scenarios,
             analysis.path,
             analysis.method,
             {
-                openApiSpec: 'loaded-spec',
-                openApiVersion: '3.0.0',
+                openApiSpec: specSource,
+                openApiVersion: specVersion,
                 operationId: analysis.operationId
             }
         );
 
-        // Export to desired format
-        const content = this.featureExporter.export(featureFile, request.format);
+        // Serialize to desired format
+        const content = this.featureSerializer.serialize(featureFile, request.format);
 
         // Write to file if path provided
         if (request.outputPath) {

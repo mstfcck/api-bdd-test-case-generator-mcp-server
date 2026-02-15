@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { GeneratorFactory } from '../../../src/infrastructure/generators/GeneratorFactory';
+import { ScenarioGeneratorRegistry } from '../../../src/infrastructure/generators/GeneratorFactory';
 import { ScenarioType } from '../../../src/domain/value-objects/ScenarioType';
 import { RequiredFieldsGenerator } from '../../../src/infrastructure/generators/RequiredFieldsGenerator';
 import { AllFieldsGenerator } from '../../../src/infrastructure/generators/AllFieldsGenerator';
@@ -9,8 +9,8 @@ import { NotFoundGenerator } from '../../../src/infrastructure/generators/NotFou
 import { EdgeCaseGenerator } from '../../../src/infrastructure/generators/EdgeCaseGenerator';
 import { IDataGenerator } from '../../../src/domain/services/IDataGenerator';
 
-describe('GeneratorFactory', () => {
-    let factory: GeneratorFactory;
+describe('ScenarioGeneratorRegistry', () => {
+    let registry: ScenarioGeneratorRegistry;
     let mockDataGenerator: IDataGenerator;
 
     beforeEach(() => {
@@ -28,54 +28,54 @@ describe('GeneratorFactory', () => {
             new NotFoundGenerator(mockDataGenerator),
             new EdgeCaseGenerator()
         ];
-        factory = new GeneratorFactory(generators);
+        registry = new ScenarioGeneratorRegistry(generators);
     });
 
-    describe('create', () => {
-        it('should create REQUIRED_FIELDS generator', () => {
-            const generator = factory.create(ScenarioType.REQUIRED_FIELDS);
+    describe('get', () => {
+        it('should get REQUIRED_FIELDS generator', () => {
+            const generator = registry.get(ScenarioType.REQUIRED_FIELDS);
 
             expect(generator).toBeDefined();
             expect(generator.getType()).toBe(ScenarioType.REQUIRED_FIELDS);
         });
 
-        it('should create ALL_FIELDS generator', () => {
-            const generator = factory.create(ScenarioType.ALL_FIELDS);
+        it('should get ALL_FIELDS generator', () => {
+            const generator = registry.get(ScenarioType.ALL_FIELDS);
 
             expect(generator).toBeDefined();
             expect(generator.getType()).toBe(ScenarioType.ALL_FIELDS);
         });
 
-        it('should create VALIDATION_ERROR generator', () => {
-            const generator = factory.create(ScenarioType.VALIDATION_ERROR);
+        it('should get VALIDATION_ERROR generator', () => {
+            const generator = registry.get(ScenarioType.VALIDATION_ERROR);
 
             expect(generator).toBeDefined();
             expect(generator.getType()).toBe(ScenarioType.VALIDATION_ERROR);
         });
 
-        it('should create AUTH_ERROR generator', () => {
-            const generator = factory.create(ScenarioType.AUTH_ERROR);
+        it('should get AUTH_ERROR generator', () => {
+            const generator = registry.get(ScenarioType.AUTH_ERROR);
 
             expect(generator).toBeDefined();
             expect(generator.getType()).toBe(ScenarioType.AUTH_ERROR);
         });
 
-        it('should create NOT_FOUND generator', () => {
-            const generator = factory.create(ScenarioType.NOT_FOUND);
+        it('should get NOT_FOUND generator', () => {
+            const generator = registry.get(ScenarioType.NOT_FOUND);
 
             expect(generator).toBeDefined();
             expect(generator.getType()).toBe(ScenarioType.NOT_FOUND);
         });
 
-        it('should create EDGE_CASE generator', () => {
-            const generator = factory.create(ScenarioType.EDGE_CASE);
+        it('should get EDGE_CASE generator', () => {
+            const generator = registry.get(ScenarioType.EDGE_CASE);
 
             expect(generator).toBeDefined();
             expect(generator.getType()).toBe(ScenarioType.EDGE_CASE);
         });
 
         it('should throw error for unknown generator type', () => {
-            expect(() => factory.create('UNKNOWN_TYPE' as ScenarioType)).toThrow('No generator registered for type: UNKNOWN_TYPE');
+            expect(() => registry.get('UNKNOWN_TYPE' as ScenarioType)).toThrow('No generator registered for type: UNKNOWN_TYPE');
         });
     });
 });

@@ -13,12 +13,10 @@ describe('ValidationPipeline', () => {
         it('should execute validators in order', () => {
             const pipeline = new ValidationPipeline<string>();
             const validator1 = {
-                validate: jest.fn().mockReturnValue({ success: true, data: 'step1' }),
-                setNext: jest.fn()
+                validate: jest.fn().mockReturnValue({ success: true, data: 'step1' })
             };
             const validator2 = {
-                validate: jest.fn().mockReturnValue({ success: true, data: 'step2' }),
-                setNext: jest.fn()
+                validate: jest.fn().mockReturnValue({ success: true, data: 'step2' })
             };
 
             pipeline.add(validator1).add(validator2);
@@ -35,15 +33,13 @@ describe('ValidationPipeline', () => {
                 validate: jest.fn().mockReturnValue({
                     success: false,
                     errors: [{ field: 'f1', message: 'e1', code: 'c1' }]
-                }),
-                setNext: jest.fn()
+                })
             };
             const validator2 = {
                 validate: jest.fn().mockReturnValue({
                     success: false,
                     errors: [{ field: 'f2', message: 'e2', code: 'c2' }]
-                }),
-                setNext: jest.fn()
+                })
             };
 
             pipeline.add(validator1).add(validator2);
@@ -55,18 +51,6 @@ describe('ValidationPipeline', () => {
                 { field: 'f1', message: 'e1', code: 'c1' },
                 { field: 'f2', message: 'e2', code: 'c2' }
             ]);
-        });
-
-        it('should support setNext chaining', () => {
-            const pipeline = new ValidationPipeline<string>();
-            const validator = {
-                validate: jest.fn(),
-                setNext: jest.fn()
-            };
-
-            pipeline.setNext(validator);
-            // Access private handlers to verify
-            expect((pipeline as any).handlers).toContain(validator);
         });
     });
 
@@ -94,11 +78,6 @@ describe('ValidationPipeline', () => {
             expect(result.errors).toBeDefined();
             expect(result.errors![0].message).toContain('Number must be greater than or equal to 18');
         });
-
-        it('should throw error when setNext is called', () => {
-            const handler = new ZodValidationHandler(schema);
-            expect(() => handler.setNext({} as any)).toThrow('does not support chaining');
-        });
     });
 
     describe('CustomValidationHandler', () => {
@@ -124,11 +103,6 @@ describe('ValidationPipeline', () => {
                 message: 'Too short',
                 code: 'CUSTOM_VALIDATION_ERROR'
             }]);
-        });
-
-        it('should throw error when setNext is called', () => {
-            const handler = new CustomValidationHandler(() => ({ valid: true }));
-            expect(() => handler.setNext({} as any)).toThrow('does not support chaining');
         });
     });
 

@@ -1,11 +1,13 @@
 export const TYPES = {
     // Domain Services
-    ISpecificationAnalyzer: Symbol.for('ISpecificationAnalyzer'),
+    ISpecificationParser: Symbol.for('ISpecificationParser'),
     IRefResolver: Symbol.for('IRefResolver'),
     IEndpointAnalyzer: Symbol.for('IEndpointAnalyzer'),
     IScenarioGenerator: Symbol.for('IScenarioGenerator'),
     IDataGenerator: Symbol.for('IDataGenerator'),
-    IFeatureExporter: Symbol.for('IFeatureExporter'),
+    IFeatureAssembler: Symbol.for('IFeatureAssembler'),
+    IFeatureSerializer: Symbol.for('IFeatureSerializer'),
+    IScenarioGeneratorRegistry: Symbol.for('IScenarioGeneratorRegistry'),
 
     // Application Ports
     ISpecificationRepository: Symbol.for('ISpecificationRepository'),
@@ -19,11 +21,6 @@ export const TYPES = {
     GenerateScenariosUseCase: Symbol.for('GenerateScenariosUseCase'),
     ExportFeatureUseCase: Symbol.for('ExportFeatureUseCase'),
 
-    // Infrastructure
-    GeneratorFactory: Symbol.for('GeneratorFactory'),
-    ExporterFactory: Symbol.for('ExporterFactory'),
-    RequestValidator: Symbol.for('RequestValidator'),
-
     // Shared
-    Logger: Symbol.for('Logger')
-};
+    ILogger: Symbol.for('ILogger')
+} as const;

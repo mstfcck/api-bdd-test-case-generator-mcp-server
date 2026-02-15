@@ -1,11 +1,11 @@
 import { injectable } from 'inversify';
-import { IFeatureExporter, type ExportFormat } from '../../domain/services/index.js';
+import { IFeatureAssembler, IFeatureSerializer, type ExportFormat } from '../../domain/services/index.js';
 import { FeatureFile, TestScenario, type FeatureInfo, type FeatureMetadata } from '../../domain/entities/index.js';
 import { ValidationError } from '../../domain/errors/index.js';
 
 @injectable()
-export class GherkinExporter implements IFeatureExporter {
-    exportFeature(
+export class GherkinExporter implements IFeatureAssembler, IFeatureSerializer {
+    assemble(
         scenarios: TestScenario[],
         endpoint: string,
         method: string,
@@ -33,20 +33,20 @@ export class GherkinExporter implements IFeatureExporter {
         return FeatureFile.create(feature, scenarios, featureMetadata);
     }
 
-    export(featureFile: FeatureFile, format: ExportFormat): string {
+    serialize(featureFile: FeatureFile, format: ExportFormat): string {
         switch (format) {
             case 'gherkin':
-                return this.exportGherkin(featureFile);
+                return this.serializeGherkin(featureFile);
             case 'json':
-                return this.exportJSON(featureFile);
+                return this.serializeJSON(featureFile);
             case 'markdown':
-                return this.exportMarkdown(featureFile);
+                return this.serializeMarkdown(featureFile);
             default:
                 throw new ValidationError(`Unsupported format: ${format}`);
         }
     }
 
-    private exportGherkin(featureFile: FeatureFile): string {
+    private serializeGherkin(featureFile: FeatureFile): string {
         const feature = featureFile.getFeature();
         const scenarios = featureFile.getScenarios();
         const metadata = featureFile.getMetadata();
@@ -89,11 +89,11 @@ export class GherkinExporter implements IFeatureExporter {
         return lines.join('\n');
     }
 
-    private exportJSON(featureFile: FeatureFile): string {
+    private serializeJSON(featureFile: FeatureFile): string {
         return JSON.stringify(featureFile.toJSON(), null, 2);
     }
 
-    private exportMarkdown(featureFile: FeatureFile): string {
+    private serializeMarkdown(featureFile: FeatureFile): string {
         const feature = featureFile.getFeature();
         const scenarios = featureFile.getScenarios();
         const metadata = featureFile.getMetadata();
