@@ -1,0 +1,13 @@
+{
+  "config": {
+    "default": true,
+    "line-length": false
+  },
+  "globs": [
+    "**/*.md",
+    ".changeset/**/*.md",
+    ".github/**/*.md",
+    "!node_modules/**",
+    "!dist/**"
+  ]
+}
